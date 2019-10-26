@@ -5,8 +5,16 @@
 *.so
 *.dylib
 
-# Test binary, build with `go test -c`
+# Binaries and test artifacts
 *.test
+seastar
+
+# Cruft
+.DS_Store
+.AppleDouble
+.LSOverride
+.vscode
+.idea
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
