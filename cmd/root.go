@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+// config options
+var (
+	cfgFile      string
+	logVerbosity string
+)
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "seastat",
 	Short: "Seastat is a Cassandra Prometheus Exporter",
@@ -21,8 +24,6 @@ You point it at an instance running Cassandra 3.0+ and it'll go and
 poll for metrics periodically in a speedy manner via Jolokia`,
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -34,7 +35,20 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// global flags
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "seastat.yaml", "config file (default is seastat.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "seastat.yaml", "Config file (default is seastat.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&logVerbosity, "verbosity", "v", logrus.InfoLevel.String(), "Log level (debug, info, warn, error, fatal, panic")
+
+	// pre-start hooks
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		fmt.Printf("🌊 Seastat Cassandra Exporter %v (commit: %v)\n", Version, GitCommitHash)
+
+		lvl, err := logrus.ParseLevel(logVerbosity)
+		if err != nil {
+			return err
+		}
+		logrus.SetLevel(lvl)
+		return nil
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -48,6 +62,6 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Info("Using config file:", viper.ConfigFileUsed())
+		logrus.Info("Using config file:", viper.ConfigFileUsed())
 	}
 }
