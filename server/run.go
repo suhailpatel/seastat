@@ -24,9 +24,32 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 	// Parent context to track all our child goroutines
 	ctx, cancel := context.WithCancel(context.Background())
 
-	addr := fmt.Sprintf(":%d", port)
-	logrus.Infof("👂 Listening on %s", addr)
+	// This tomb will take care of all our goroutines such as the scraper and
+	// the webserver. If something unexpected happens or we need to gracefully
+	// terminate, it'll keep track of everything pending
+	t := tomb.Tomb{}
 
+	// Start up our scraper
+	scraper := NewScraper(client)
+	t.Go(func() error {
+		// Set up our scraper for shutdown when our context terminates
+		t.Go(func() error {
+			<-ctx.Done()
+			scraper.Stop()
+			return nil
+		})
+
+		logrus.Infof("🕷️ Starting scraper (interval: %v)", interval)
+		if err := scraper.Run(interval); err != nil {
+			logrus.Errorf("error whilst scraping: %v", err)
+			t.Kill(fmt.Errorf("error whilst scraping: %v", err))
+		}
+		logrus.Infof("🦠 Stopping scraper")
+		return nil
+	})
+
+	// Set up our webserver
+	addr := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
 		Addr: addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,11 +63,6 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 	http.HandleFunc("/healthz", handleHealthz(client))
 	http.HandleFunc("/", handleRoot())
 
-	// This tomb will take care of all our goroutines such as the scraper and
-	// the webserver. If something unexpected happens or we need to gracefully
-	// terminate, it'll keep track of everything pending
-	t := tomb.Tomb{}
-
 	// Start up our webserver
 	t.Go(func() error {
 		// Set up our server for graceful shutdown when our context terminates
@@ -54,6 +72,7 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 			return nil
 		})
 
+		logrus.Infof("👂 Listening on %s", addr)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			logrus.Errorf("error whilst serving: %v", err)
 			t.Kill(fmt.Errorf("error whilst serving: %v", err))
@@ -71,7 +90,7 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 	case <-t.Dying():
 		logrus.Infof("⚰️ Tomb is dying, shutting down")
 	}
-	cancel()
+	cancel() // cancel our context to kick off the shutdown chain
 
 	// Wait a maximum of 10 seconds for everything to cleanly shut down
 	select {
