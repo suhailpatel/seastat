@@ -43,6 +43,41 @@ func run(cmd *cobra.Command) {
 	if err != nil {
 		logrus.Fatalf("could not get version from Jolokia: %v", err)
 	}
+	logrus.Debugf("Running with Jolokia version: %s", version)
 
-	logrus.Debugf("Running with Jolokia version: %v", version)
+	// GCStats
+	gcStats, err := client.GarbageCollectionStats()
+	if err != nil {
+		logrus.Fatalf("could not get GC Stats from Jolokia: %v", err)
+	}
+	logrus.Debugf("GC Stats: %+v", gcStats)
+
+	// CQLStats
+	cqlStats, err := client.CQLStats()
+	if err != nil {
+		logrus.Fatalf("could not get CQL Stats from Jolokia: %v", err)
+	}
+	logrus.Debugf("CQL Stats: %+v", cqlStats)
+
+	// TPStats
+	tpStats, err := client.ThreadPoolStats()
+	if err != nil {
+		logrus.Fatalf("could not get ThreadPool Stats from Jolokia: %v", err)
+	}
+	logrus.Debugf("TP Stats: %+v", tpStats)
+
+	// Tables
+	tables, err := client.Tables()
+	if err != nil {
+		logrus.Fatalf("could not get tables from Jolokia: %v", err)
+	}
+
+	// TableStats
+	for _, table := range tables {
+		tableStats, err := client.TableStats(table)
+		if err != nil {
+			logrus.Fatalf("could not get table stats for table %v from Jolokia: %v", table, err)
+		}
+		logrus.Debugf("Table: %v, Stats: %+v", table, tableStats)
+	}
 }

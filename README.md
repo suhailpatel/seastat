@@ -14,7 +14,9 @@ Seastat is designed to be run standalone and updates metrics in the background (
 
 ## Requirements
 
-Seastat doesn't speak JMX directly. Instead, it uses [Jolokia](https://jolokia.org/) to translate back and forth into JMX. You will need Jolokia to be embedded into your Cassandra process
+Seastat doesn't speak JMX directly. Instead, it uses [Jolokia](https://jolokia.org/) to translate back and forth into JMX. You will need Jolokia to be embedded into your Cassandra process.
+
+Seastat has been designed on top of Cassandra 3.0 (specifically, 3.0.18). It may work with 3.11+ but some of the metric types may have changed between the two versions which may result in zero values.
 
 ## Metrics Exposed
 
