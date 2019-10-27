@@ -27,7 +27,15 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 	addr := fmt.Sprintf(":%d", port)
 	logrus.Infof("👂 Listening on %s", addr)
 
-	srv := &http.Server{Addr: addr}
+	srv := &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			w.Header().Set("Seastat-Version", flags.Version)
+			http.DefaultServeMux.ServeHTTP(w, r)
+			logrus.Infof("%s %s %.2fms", r.Method, r.URL, time.Since(start).Seconds()*1000.0)
+		}),
+	}
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/healthz", handleHealthz(client))
 	http.HandleFunc("/", handleRoot())
