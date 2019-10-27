@@ -36,8 +36,8 @@ func run(cmd *cobra.Command) {
 		logrus.Fatalf("'endpoint' can not be empty")
 	}
 
-	if interval < 1*time.Second {
-		interval = 30 * time.Second
+	if interval < 10*time.Second {
+		interval = 10 * time.Second
 	}
 
 	if port < 0 {
