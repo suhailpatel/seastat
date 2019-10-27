@@ -17,19 +17,6 @@ var (
 	)
 )
 
-// // TableStats
-// type TableStats struct {
-// 	Table Table
-//
-// 	// Latency stats
-// 	CoordinatorRead  Latency
-// 	CoordinatorWrite Latency
-// 	CoordinatorScan  Latency
-// 	ReadLatency      Latency
-// 	WriteLatency     Latency
-// 	RangeLatency     Latency
-// }
-
 // TableStats
 var (
 	PromTableCoordinatorRead = prometheus.NewDesc(
@@ -82,19 +69,19 @@ var (
 
 	PromTableMaxPartitionSize = prometheus.NewDesc(
 		"seastat_table_max_partition_size_bytes",
-		"Partition Size Max in bytes",
+		"Max Partition Size in bytes",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableMeanPartitionSize = prometheus.NewDesc(
 		"seastat_table_mean_partition_size_bytes",
-		"Partition Size Mean in bytes",
+		"Mean Partition Size in bytes",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableBloomFilterFalseRatio = prometheus.NewDesc(
 		"seastat_table_bloom_filter_false_ratio",
-		"Percent of bloom filter false",
+		"False positive ratio of table’s bloom filter",
 		[]string{"keyspace", "table"}, nil,
 	)
 
