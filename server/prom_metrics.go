@@ -17,6 +17,100 @@ var (
 	)
 )
 
+// // TableStats
+// type TableStats struct {
+// 	Table Table
+//
+// 	// Latency stats
+// 	CoordinatorRead  Latency
+// 	CoordinatorWrite Latency
+// 	CoordinatorScan  Latency
+// 	ReadLatency      Latency
+// 	WriteLatency     Latency
+// 	RangeLatency     Latency
+// }
+
+// TableStats
+var (
+	PromTableCoordinatorRead = prometheus.NewDesc(
+		"seastat_table_coordinator_read_latency",
+		"Coordinator table read latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableCoordinatorWrite = prometheus.NewDesc(
+		"seastat_table_coordinator_write_latency",
+		"Coordinator table write latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableCoordinatorRangeScan = prometheus.NewDesc(
+		"seastat_table_coordinator_range_scan_latency",
+		"Coordinator table range scan latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableRead = prometheus.NewDesc(
+		"seastat_table_read_latency",
+		"Table read latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableWrite = prometheus.NewDesc(
+		"seastat_table_write_latency",
+		"Table write latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableRangeScan = prometheus.NewDesc(
+		"seastat_table_range_scan_latency",
+		"Table range scan latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableEstimatedPartitionCount = prometheus.NewDesc(
+		"seastat_table_estimated_partitions",
+		"Number of partitions in this table (estimated)",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTablePendingCompactions = prometheus.NewDesc(
+		"seastat_table_pending_compactions",
+		"Number of pending compactions on this table",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableMaxPartitionSize = prometheus.NewDesc(
+		"seastat_table_max_partition_size_bytes",
+		"Partition Size Max in bytes",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableMeanPartitionSize = prometheus.NewDesc(
+		"seastat_table_mean_partition_size_bytes",
+		"Partition Size Mean in bytes",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableBloomFilterFalseRatio = prometheus.NewDesc(
+		"seastat_table_bloom_filter_false_ratio",
+		"Percent of bloom filter false",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableKeyCacheHitRate = prometheus.NewDesc(
+		"seastat_table_key_cache_hit_percent",
+		"Percent of key cache hits",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTablePercentRepaired = prometheus.NewDesc(
+		"seastat_table_repaired_percent",
+		"Percent of table repaired",
+		[]string{"keyspace", "table"}, nil,
+	)
+)
+
 // CQLStats
 var (
 	PromCQLPreparedStatementsCount = prometheus.NewDesc(

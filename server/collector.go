@@ -24,6 +24,21 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromScrapeTimestamp,
 		PromScrapeDuration,
 
+		// TableStats
+		PromTableCoordinatorRead,
+		PromTableCoordinatorWrite,
+		PromTableCoordinatorRangeScan,
+		PromTableRead,
+		PromTableWrite,
+		PromTableRangeScan,
+		PromTableEstimatedPartitionCount,
+		PromTablePendingCompactions,
+		PromTableMaxPartitionSize,
+		PromTableMeanPartitionSize,
+		PromTableBloomFilterFalseRatio,
+		PromTableKeyCacheHitRate,
+		PromTablePercentRepaired,
+
 		// CQLStats
 		PromCQLPreparedStatementsCount,
 		PromCQLPreparedStatementsEvicted,
@@ -65,6 +80,86 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 		prometheus.GaugeValue, float64(metrics.ScrapeTime.Unix()))
 	ch <- prometheus.MustNewConstMetric(PromScrapeDuration,
 		prometheus.GaugeValue, float64(metrics.ScrapeDuration.Seconds()))
+
+	// TableStats
+	for _, stat := range metrics.TableStats {
+		ch <- prometheus.MustNewConstSummary(PromTableCoordinatorRead,
+			uint64(stat.CoordinatorRead.Count),
+			float64(stat.CoordinatorRead.Count)*stat.CoordinatorRead.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.CoordinatorRead.Percentile75.Seconds(),
+				95.0: stat.CoordinatorRead.Percentile95.Seconds(),
+				99.0: stat.CoordinatorRead.Percentile99.Seconds(),
+				99.9: stat.CoordinatorRead.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableCoordinatorWrite,
+			uint64(stat.CoordinatorWrite.Count),
+			float64(stat.CoordinatorWrite.Count)*stat.CoordinatorWrite.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.CoordinatorWrite.Percentile75.Seconds(),
+				95.0: stat.CoordinatorWrite.Percentile95.Seconds(),
+				99.0: stat.CoordinatorWrite.Percentile99.Seconds(),
+				99.9: stat.CoordinatorWrite.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableCoordinatorRangeScan,
+			uint64(stat.CoordinatorScan.Count),
+			float64(stat.CoordinatorScan.Count)*stat.CoordinatorScan.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.CoordinatorScan.Percentile75.Seconds(),
+				95.0: stat.CoordinatorScan.Percentile95.Seconds(),
+				99.0: stat.CoordinatorScan.Percentile99.Seconds(),
+				99.9: stat.CoordinatorScan.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableRead,
+			uint64(stat.ReadLatency.Count),
+			float64(stat.ReadLatency.Count)*stat.ReadLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.ReadLatency.Percentile75.Seconds(),
+				95.0: stat.ReadLatency.Percentile95.Seconds(),
+				99.0: stat.ReadLatency.Percentile99.Seconds(),
+				99.9: stat.ReadLatency.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableWrite,
+			uint64(stat.WriteLatency.Count),
+			float64(stat.WriteLatency.Count)*stat.WriteLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.WriteLatency.Percentile75.Seconds(),
+				95.0: stat.WriteLatency.Percentile95.Seconds(),
+				99.0: stat.WriteLatency.Percentile99.Seconds(),
+				99.9: stat.WriteLatency.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableRangeScan,
+			uint64(stat.RangeLatency.Count),
+			float64(stat.RangeLatency.Count)*stat.RangeLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.RangeLatency.Percentile75.Seconds(),
+				95.0: stat.RangeLatency.Percentile95.Seconds(),
+				99.0: stat.RangeLatency.Percentile99.Seconds(),
+				99.9: stat.RangeLatency.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+
+		ch <- prometheus.MustNewConstMetric(PromTableEstimatedPartitionCount,
+			prometheus.GaugeValue, float64(stat.EstimatedPartitionCount),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTablePendingCompactions,
+			prometheus.GaugeValue, float64(stat.PendingCompactions),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableMaxPartitionSize,
+			prometheus.GaugeValue, float64(stat.MaxPartitionSize),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableMeanPartitionSize,
+			prometheus.GaugeValue, float64(stat.MeanPartitionSize),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableBloomFilterFalseRatio,
+			prometheus.GaugeValue, float64(stat.BloomFilterFalseRatio),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableKeyCacheHitRate,
+			prometheus.GaugeValue, float64(stat.KeyCacheHitRate),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTablePercentRepaired,
+			prometheus.GaugeValue, float64(stat.PercentRepaired),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+	}
 
 	// CQLStats
 	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsCount,
