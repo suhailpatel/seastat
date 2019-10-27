@@ -8,6 +8,7 @@
 # Binaries and test artifacts
 *.test
 seastat
+seastat-*
 
 # Cruft
 .DS_Store
