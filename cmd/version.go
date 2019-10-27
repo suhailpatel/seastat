@@ -4,14 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-)
 
-var (
-	// Version is the current version of the app
-	Version string
-	// GitCommitHash contains the commit hash used to build
-	// this version of the app
-	GitCommitHash string
+	"github.com/suhailpatel/seastat/flags"
 )
 
 var versionCmd = &cobra.Command{
@@ -19,7 +13,7 @@ var versionCmd = &cobra.Command{
 	Short: "Prints the version of Seastat",
 	Long:  `Prints the version of Seastat`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Version: %v (Commit: %v)\n", Version, GitCommitHash)
+		fmt.Printf("Version: %v (Commit: %v)\n", flags.Version, flags.GitCommitHash)
 	},
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/suhailpatel/seastat/jolokia"
+	"github.com/suhailpatel/seastat/server"
 )
 
 var serverCmd = &cobra.Command{
@@ -23,11 +24,13 @@ func init() {
 
 	serverCmd.PersistentFlags().String("endpoint", "http://localhost:8778", "endpoint where Jolokia is running")
 	serverCmd.PersistentFlags().Duration("interval", 30*time.Second, "how often we attempt to extract metrics (minimum 10s)")
+	serverCmd.PersistentFlags().Int("port", 8080, "port to run the Seastat server on (for Prometheus to scrape)")
 }
 
 func run(cmd *cobra.Command) {
 	endpoint, _ := cmd.Flags().GetString("endpoint")
 	interval, _ := cmd.Flags().GetDuration("interval")
+	port, _ := cmd.Flags().GetInt("port")
 
 	if endpoint == "" {
 		logrus.Fatalf("'endpoint' can not be empty")
@@ -37,47 +40,10 @@ func run(cmd *cobra.Command) {
 		interval = 10 * time.Second
 	}
 
-	// Test our connection to Jolokia to make sure everything is good!
+	if port < 0 {
+		port = 8000
+	}
+
 	client := jolokia.Init(endpoint)
-	version, err := client.Version()
-	if err != nil {
-		logrus.Fatalf("could not get version from Jolokia: %v", err)
-	}
-	logrus.Debugf("Running with Jolokia version: %s", version)
-
-	// GCStats
-	gcStats, err := client.GarbageCollectionStats()
-	if err != nil {
-		logrus.Fatalf("could not get GC Stats from Jolokia: %v", err)
-	}
-	logrus.Debugf("GC Stats: %+v", gcStats)
-
-	// CQLStats
-	cqlStats, err := client.CQLStats()
-	if err != nil {
-		logrus.Fatalf("could not get CQL Stats from Jolokia: %v", err)
-	}
-	logrus.Debugf("CQL Stats: %+v", cqlStats)
-
-	// TPStats
-	tpStats, err := client.ThreadPoolStats()
-	if err != nil {
-		logrus.Fatalf("could not get ThreadPool Stats from Jolokia: %v", err)
-	}
-	logrus.Debugf("TP Stats: %+v", tpStats)
-
-	// Tables
-	tables, err := client.Tables()
-	if err != nil {
-		logrus.Fatalf("could not get tables from Jolokia: %v", err)
-	}
-
-	// TableStats
-	for _, table := range tables {
-		tableStats, err := client.TableStats(table)
-		if err != nil {
-			logrus.Fatalf("could not get table stats for table %v from Jolokia: %v", table, err)
-		}
-		logrus.Debugf("Table: %v, Stats: %+v", table, tableStats)
-	}
+	server.Run(client, interval, port)
 }

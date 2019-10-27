@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/suhailpatel/seastat/flags"
 )
 
 // config options
@@ -40,7 +42,7 @@ func init() {
 
 	// pre-start hooks
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("🌊 Seastat Cassandra Exporter %v\n", Version)
+		fmt.Printf("🌊 Seastat Cassandra Exporter %v\n", flags.Version)
 
 		lvl, err := logrus.ParseLevel(logVerbosity)
 		if err != nil {
