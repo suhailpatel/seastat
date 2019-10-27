@@ -20,6 +20,7 @@ type (
 		Percentile95  time.Duration
 		Percentile99  time.Duration
 		Percentile999 time.Duration
+		Mean          time.Duration
 		Count         Counter
 	}
 )

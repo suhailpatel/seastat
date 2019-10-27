@@ -33,12 +33,13 @@ func parseLatency(val *fastjson.Value) Latency {
 	durationUnit := parseDurationString(durationUnitString)
 
 	return Latency{
-		Minimum:       time.Duration(val.Get("Min").GetInt64()) * durationUnit,
-		Maximum:       time.Duration(val.Get("Max").GetInt64()) * durationUnit,
-		Percentile75:  time.Duration(val.Get("75thPercentile").GetInt64()) * durationUnit,
-		Percentile95:  time.Duration(val.Get("95thPercentile").GetInt64()) * durationUnit,
-		Percentile99:  time.Duration(val.Get("99thPercentile").GetInt64()) * durationUnit,
-		Percentile999: time.Duration(val.Get("999thPercentile").GetInt64()) * durationUnit,
+		Minimum:       time.Duration(val.Get("Min").GetFloat64()) * durationUnit,
+		Maximum:       time.Duration(val.Get("Max").GetFloat64()) * durationUnit,
+		Percentile75:  time.Duration(val.Get("75thPercentile").GetFloat64()) * durationUnit,
+		Percentile95:  time.Duration(val.Get("95thPercentile").GetFloat64()) * durationUnit,
+		Percentile99:  time.Duration(val.Get("99thPercentile").GetFloat64()) * durationUnit,
+		Percentile999: time.Duration(val.Get("999thPercentile").GetFloat64()) * durationUnit,
+		Mean:          time.Duration(val.Get("Mean").GetFloat64()) * durationUnit,
 		Count:         Counter(val.Get("Count").GetInt64()),
 	}
 }
