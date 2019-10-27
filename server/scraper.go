@@ -36,8 +36,8 @@ type ScrapedMetrics struct {
 	MemoryStats      jolokia.MemoryStats
 	GCStats          []jolokia.GCStats
 
-	ScrapeDuration  time.Duration
-	ScrapeTimestamp time.Time
+	ScrapeDuration time.Duration
+	ScrapeTime     time.Time
 }
 
 // TableStatsSorter sorts lists of table stats by keyspace.table name
@@ -160,7 +160,7 @@ func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 		MemoryStats:      memoryStats,
 		GCStats:          gcStats,
 		ScrapeDuration:   time.Since(scrapeStart),
-		ScrapeTimestamp:  time.Now(),
+		ScrapeTime:       time.Now(),
 	}
 }
 

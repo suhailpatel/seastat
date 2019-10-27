@@ -20,6 +20,25 @@ func NewSeastatCollector(s *Scraper) prometheus.Collector {
 // the last descriptor has been sent.
 func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 	descs := []*prometheus.Desc{
+		// ScrapeStats
+		PromScrapeTimestamp,
+		PromScrapeDuration,
+
+		// CQLStats
+		PromCQLPreparedStatementsCount,
+		PromCQLPreparedStatementsEvicted,
+		PromCQLPreparedStatementsExecuted,
+		PromCQLRegularStatementsExecuted,
+		PromCQLPreparedStatementsRatio,
+
+		// ThreadPoolStats
+		PromThreadPoolActiveTasks,
+		PromThreadPoolPendingTasks,
+		PromThreadPoolCompletedTasks,
+		PromThreadPoolTotalBlockedTasks,
+		PromThreadPoolCurrentlyBlockedTasks,
+		PromThreadPoolMaxPoolSize,
+
 		// MemoryStats
 		PromMemoryStatsHeapUsed,
 		PromMemoryStatsNonHeapUsed,
@@ -41,6 +60,40 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 	metrics := c.scraper.Get()
 
+	// ScrapeStats
+	ch <- prometheus.MustNewConstMetric(PromScrapeTimestamp,
+		prometheus.GaugeValue, float64(metrics.ScrapeTime.Unix()))
+	ch <- prometheus.MustNewConstMetric(PromScrapeDuration,
+		prometheus.GaugeValue, float64(metrics.ScrapeDuration.Seconds()))
+
+	// CQLStats
+	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsCount,
+		prometheus.GaugeValue, float64(metrics.CQLStats.PreparedStatementsCount))
+	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsEvicted,
+		prometheus.CounterValue, float64(metrics.CQLStats.PreparedStatementsEvicted))
+	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsExecuted,
+		prometheus.CounterValue, float64(metrics.CQLStats.PreparedStatementsExecuted))
+	ch <- prometheus.MustNewConstMetric(PromCQLRegularStatementsExecuted,
+		prometheus.CounterValue, float64(metrics.CQLStats.RegularStatementsExecuted))
+	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsRatio,
+		prometheus.GaugeValue, float64(metrics.CQLStats.PreparedStatementsRatio))
+
+	// ThreadPoolStats
+	for _, pool := range metrics.ThreadPoolStats {
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolActiveTasks,
+			prometheus.GaugeValue, float64(pool.ActiveTasks), pool.PoolName)
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolPendingTasks,
+			prometheus.GaugeValue, float64(pool.PendingTasks), pool.PoolName)
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolCompletedTasks,
+			prometheus.CounterValue, float64(pool.CompletedTasks), pool.PoolName)
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolTotalBlockedTasks,
+			prometheus.CounterValue, float64(pool.TotalBlockedTasks), pool.PoolName)
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolCurrentlyBlockedTasks,
+			prometheus.GaugeValue, float64(pool.CurrentlyBlockedTasks), pool.PoolName)
+		ch <- prometheus.MustNewConstMetric(PromThreadPoolMaxPoolSize,
+			prometheus.GaugeValue, float64(pool.MaxPoolSize), pool.PoolName)
+	}
+
 	// MemoryStats
 	ch <- prometheus.MustNewConstMetric(PromMemoryStatsHeapUsed,
 		prometheus.GaugeValue, float64(metrics.MemoryStats.HeapUsed))
@@ -56,5 +109,4 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromGCStatsAccumulatedGC,
 			prometheus.CounterValue, stat.Accumulated.Seconds(), stat.Name)
 	}
-
 }
