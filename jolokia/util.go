@@ -9,23 +9,23 @@ import "strings"
 //
 // example: org.apache.cassandra.metrics:keyspace=system,name=LiveDiskSpaceUsed,scope=IndexInfo,type=Table
 // turns into:
-//   keyspace: system
-//   name: LiveDiskSpaceUsed
-//   scope: IndexInfo
-//   type: Table
+//   keyspace: "system"
+//   name: 	   "LiveDiskSpaceUsed"
+//   scope:    "IndexInfo"
+//   type:     "Table"
 //
 func extractAttributeMap(tag string) map[string]string {
 	idx := strings.IndexByte(tag, ':')
 	tag = tag[idx+1:]
 
-	split := strings.Split(tag, ",")
-	m := make(map[string]string, len(split))
-	for _, pair := range strings.Split(tag, ",") {
-		items := strings.Split(pair, "=")
-		if len(items) != 2 {
+	commaSplit := strings.Split(tag, ",")
+	out := make(map[string]string, len(commaSplit))
+	for _, pair := range commaSplit {
+		kvSplit := strings.Split(pair, "=")
+		if len(kvSplit) != 2 {
 			continue
 		}
-		m[items[0]] = items[1]
+		out[kvSplit[0]] = kvSplit[1]
 	}
-	return m
+	return out
 }

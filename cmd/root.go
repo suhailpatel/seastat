@@ -46,7 +46,12 @@ func init() {
 		if err != nil {
 			return err
 		}
+
 		logrus.SetLevel(lvl)
+		logrus.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp: true,
+		})
+
 		return nil
 	}
 }

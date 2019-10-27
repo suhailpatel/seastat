@@ -16,15 +16,17 @@ Seastat is designed to be run standalone and updates metrics in the background (
 
 Seastat doesn't speak JMX directly. Instead, it uses [Jolokia](https://jolokia.org/) to translate back and forth into JMX. You will need Jolokia to be embedded into your Cassandra process
 
-**Note:** Seastat does not support Jolokia auth. I'm hoping to add this soon!
-
 ## Metrics Exposed
 
-Seastat exposes a few of the JMX metrics exposed by Cassandra. It focuses on 
+Seastat exposes a few of the JMX metrics exposed by Cassandra
 
 ## Usage
 
 TODO
+
+## Things to work on
+
+- Seastat does not support Jolokia auth
 
 ## Author
 
