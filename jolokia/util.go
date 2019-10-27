@@ -1,10 +1,70 @@
 package jolokia
 
-import "strings"
+import (
+	"strings"
+	"time"
 
-// extractAttributeMap takes in a string consisting of (possibly) a metric
+	"github.com/valyala/fastjson"
+)
+
+// parseLatency takes a latency map and converts the various fields into
+// a Latency struct object so it's easier to work with
+//
+//   "StdDev": 0,
+//   "75thPercentile": 0,
+//   "Mean": null,
+//   "98thPercentile": 0,
+//   "RateUnit": "events/second",
+//   "95thPercentile": 0,
+//   "99thPercentile": 0,
+//   "Max": 0,
+//   "Count": 7,
+//   "FiveMinuteRate": 7.900892347061689e-10,
+//   "50thPercentile": 0,
+//   "MeanRate": 0.0008518263461541576,
+//   "Min": 0,
+//   "OneMinuteRate": 9.689141333518686e-39,
+//   "DurationUnit": "microseconds",
+//   "999thPercentile": 0,
+//   "FifteenMinuteRate": 0.00002282562138178788
+//
+func parseLatency(val *fastjson.Value) Latency {
+	durationUnitString := string(val.Get("DurationUnit").GetStringBytes())
+	durationUnit := parseDurationString(durationUnitString)
+
+	return Latency{
+		Minimum:       time.Duration(val.Get("Min").GetInt64()) * durationUnit,
+		Maximum:       time.Duration(val.Get("Max").GetInt64()) * durationUnit,
+		Percentile75:  time.Duration(val.Get("75thPercentile").GetInt64()) * durationUnit,
+		Percentile95:  time.Duration(val.Get("95thPercentile").GetInt64()) * durationUnit,
+		Percentile99:  time.Duration(val.Get("99thPercentile").GetInt64()) * durationUnit,
+		Percentile999: time.Duration(val.Get("999thPercentile").GetInt64()) * durationUnit,
+		Count:         Counter(val.Get("Count").GetInt64()),
+	}
+}
+
+func parseDurationString(in string) time.Duration {
+	switch in {
+	case "nanoseconds":
+		return time.Nanosecond
+	case "microseconds":
+		return time.Microsecond
+	case "milliseconds":
+		return time.Millisecond
+	case "seconds":
+		return time.Second
+	case "minutes":
+		return time.Minute
+	case "hours":
+		return time.Hour
+	default:
+		return time.Microsecond
+	}
+}
+
+// extractAttributes takes in a string consisting of (possibly) a metric
 // name followed by some key value pairs and turns that into a structured
-// map of strings
+// map of key value strings
 //
 //
 // example: org.apache.cassandra.metrics:keyspace=system,name=LiveDiskSpaceUsed,scope=IndexInfo,type=Table
@@ -14,7 +74,7 @@ import "strings"
 //   scope:    "IndexInfo"
 //   type:     "Table"
 //
-func extractAttributeMap(tag string) map[string]string {
+func extractAttributes(tag string) map[string]string {
 	idx := strings.IndexByte(tag, ':')
 	tag = tag[idx+1:]
 

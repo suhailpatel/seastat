@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
@@ -37,7 +38,7 @@ func (c *jolokiaClient) Version() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("err calling /version: %v", err)
 	}
-	return v.Get("value", "agent").String(), nil
+	return string(v.Get("value", "agent").GetStringBytes()), nil
 }
 
 // Tables gets the list of tables from Cassandra
@@ -52,7 +53,7 @@ func (c *jolokiaClient) Tables() ([]Table, error) {
 
 	tables := []Table{}
 	v.Get("value").GetObject().Visit(func(key []byte, _ *fastjson.Value) {
-		attributes := extractAttributeMap(string(key))
+		attributes := extractAttributes(string(key))
 
 		keyspace, _ := attributes["keyspace"]
 		table, _ := attributes["scope"] // JMX exposes the table name as scope
@@ -63,6 +64,56 @@ func (c *jolokiaClient) Tables() ([]Table, error) {
 		}
 	})
 	return tables, nil
+}
+
+// TableStats gets all the stats for a given Table within Cassandra
+func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
+	// TODO(suhail): If this gets slow, we can send a bulk request instead with
+	// the fields we want. There's a bunch of metrics we ignore (but may add
+	// later depending on performance and need)
+	v, err := c.read("org.apache.cassandra.metrics", "type=Table",
+		fmt.Sprintf("keyspace=%s", table.KeyspaceName),
+		fmt.Sprintf("scope=%s", table.TableName), "name=*")
+	if err != nil {
+		return TableStats{}, fmt.Errorf("err reading table: %v", err)
+	}
+
+	stats := TableStats{Table: table}
+	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
+		attributes := extractAttributes(string(key))
+		switch attributes["name"] {
+		// Latency stats
+		case "CoordinatorReadLatency":
+			stats.CoordinatorRead = parseLatency(val)
+		case "CoordinatorWriteLatency":
+			stats.CoordinatorWrite = parseLatency(val)
+		case "CoordinatorScanLatency":
+			stats.CoordinatorScan = parseLatency(val)
+		case "ReadLatency":
+			stats.ReadLatency = parseLatency(val)
+		case "WriteLatency":
+			stats.WriteLatency = parseLatency(val)
+		case "RangeLatency":
+			stats.RangeLatency = parseLatency(val)
+
+		// Table specific stats
+		case "EstimatedPartitionCount":
+			stats.EstimatedPartitionCount = Gauge(val.Get("Value").GetInt64())
+		case "PendingCompactions":
+			stats.PendingCompactions = Gauge(val.Get("Value").GetInt64())
+		case "MaxPartitionSize":
+			stats.MaxPartitionSize = BytesGauge(val.Get("Value").GetInt64())
+		case "MeanPartitionSize":
+			stats.MeanPartitionSize = BytesGauge(val.Get("Value").GetInt64())
+		case "BloomFilterFalseRatio":
+			stats.BloomFilterFalseRatio = FloatGauge(val.Get("Value").GetInt64())
+		case "KeyCacheHitRate":
+			stats.KeyCacheHitRate = FloatGauge(val.Get("Value").GetInt64())
+		case "PercentRepaired":
+			stats.PercentRepaired = FloatGauge(val.Get("Value").GetInt64())
+		}
+	})
+	return stats, nil
 }
 
 // CQLStats returns info about the kinds of CQL statements being processed and
@@ -76,26 +127,82 @@ func (c *jolokiaClient) CQLStats() (CQLStats, error) {
 
 	stats := CQLStats{}
 	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
-		attributes := extractAttributeMap(string(key))
+		attributes := extractAttributes(string(key))
 		switch attributes["name"] {
 		case "PreparedStatementsCount":
-			stats.PreparedStatementsCount = val.Get("Count").GetInt64()
+			stats.PreparedStatementsCount = Gauge(val.Get("Count").GetInt64())
 		case "PreparedStatementsEvicted":
-			stats.PreparedStatementsEvicted = val.Get("Count").GetInt64()
+			stats.PreparedStatementsEvicted = Counter(val.Get("Count").GetInt64())
 		case "PreparedStatementsExecuted":
-			stats.PreparedStatementsExecuted = val.Get("Count").GetInt64()
+			stats.PreparedStatementsExecuted = Counter(val.Get("Count").GetInt64())
 		case "RegularStatementsExecuted":
-			stats.RegularStatementsExecuted = val.Get("Count").GetInt64()
+			stats.RegularStatementsExecuted = Counter(val.Get("Count").GetInt64())
 		case "PreparedStatementsRatio":
-			stats.PreparedStatementsRatio = val.Get("Value").GetFloat64()
+			stats.PreparedStatementsRatio = FloatGauge(val.Get("Value").GetFloat64())
 		}
 	})
 	return stats, nil
 }
 
+// ThreadPoolStats returns info about each of the Thread Pools running
+// in Cassandra
+func (c *jolokiaClient) ThreadPoolStats() ([]ThreadPoolStats, error) {
+	v, err := c.read("org.apache.cassandra.metrics", "type=ThreadPools", "*")
+	if err != nil {
+		return []ThreadPoolStats{}, fmt.Errorf("err reading ThreadPool stats: %v", err)
+	}
+
+	// The structure of this response is slightly weird because is just a flat
+	// list of stats, to keep on top of this, we use a map which we'll convert
+	// to a list later on
+	pools := map[string]*ThreadPoolStats{}
+	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
+		attributes := extractAttributes(string(key))
+		poolName := attributes["scope"] // pool name is embedded as scope
+		pool, ok := pools[poolName]
+		if !ok {
+			pool = &ThreadPoolStats{PoolName: poolName}
+			pools[poolName] = pool
+		}
+
+		switch attributes["name"] {
+		case "ActiveTasks":
+			pool.ActiveTasks = Gauge(val.Get("Value").GetInt64())
+		case "PendingTasks":
+			pool.PendingTasks = Gauge(val.Get("Value").GetInt64())
+		case "CompletedTasks":
+			// TODO(suhail): This feels like a Counter but has a value rather
+			// than a Count which is odd?
+			pool.CompletedTasks = Counter(val.Get("Value").GetInt64())
+		case "TotalBlockedTasks":
+			pool.TotalBlockedTasks = Counter(val.Get("Count").GetInt64())
+		case "CurrentlyBlockedTasks":
+			// TODO(suhail): This feels like a gauge but is exposed as a Counter
+			pool.CurrentlyBlockedTasks = Counter(val.Get("Count").GetInt64())
+		case "MaxPoolSize":
+			pool.MaxPoolSize = Gauge(val.Get("Value").GetInt64())
+		}
+	})
+
+	// We want this function to be determinstic output given two calls and
+	// assuming the response from Jolokia is consistent. Thus, we sort our
+	// pools in the output by Pool Name
+	names := make([]string, 0, len(pools))
+	for poolName := range pools {
+		names = append(names, poolName)
+	}
+	sort.Strings(names)
+
+	out := make([]ThreadPoolStats, 0, len(names))
+	for _, poolName := range names {
+		out = append(out, *pools[poolName])
+	}
+	return out, nil
+}
+
 // ConnectedClients returns the number of connected clients via the Native
 // Protocol in Cassandra
-func (c *jolokiaClient) ConnectedClients() (int64, error) {
+func (c *jolokiaClient) ConnectedClients() (Gauge, error) {
 	// We want to be very specific with our query here because otherwise we'll
 	// get a list of all connected clients which might be huge if there are lots
 	// of them!
@@ -103,7 +210,7 @@ func (c *jolokiaClient) ConnectedClients() (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("err reading clients: %v", err)
 	}
-	return v.Get("value", "Value").GetInt64(), nil
+	return Gauge(v.Get("value", "Value").GetInt64()), nil
 }
 
 // MemoryStats returns memory information about the Java process
@@ -114,8 +221,8 @@ func (c *jolokiaClient) MemoryStats() (MemoryStats, error) {
 	}
 
 	return MemoryStats{
-		HeapUsed:    v.Get("value", "HeapMemoryUsage", "used").GetInt64(),
-		NonHeapUsed: v.Get("value", "NonHeapMemoryUsage", "used").GetInt64(),
+		HeapUsed:    BytesGauge(v.Get("value", "HeapMemoryUsage", "used").GetInt64()),
+		NonHeapUsed: BytesGauge(v.Get("value", "NonHeapMemoryUsage", "used").GetInt64()),
 	}, nil
 }
 
@@ -132,8 +239,8 @@ func (c *jolokiaClient) GarbageCollectionStats() ([]GCStats, error) {
 	stats := []GCStats{}
 	v.Get("value").GetObject().Visit(func(_ []byte, val *fastjson.Value) {
 		stats = append(stats, GCStats{
-			Name:        val.Get("Name").String(),
-			Count:       val.Get("CollectionCount").GetInt64(),
+			Name:        string(val.Get("Name").GetStringBytes()),
+			Count:       Counter(val.Get("CollectionCount").GetInt64()),
 			LastGC:      time.Duration(val.Get("LastGcInfo", "duration").GetInt64()) * time.Millisecond,
 			Accumulated: time.Duration(val.Get("CollectionTime").GetInt64()) * time.Millisecond,
 		})
