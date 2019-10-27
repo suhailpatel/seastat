@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	tomb "gopkg.in/tomb.v2"
@@ -47,6 +48,10 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 		logrus.Infof("🦠 Stopping scraper")
 		return nil
 	})
+
+	// Set up the Prometheus collector
+	collector := NewSeastatCollector(scraper)
+	prometheus.MustRegister(collector)
 
 	// Set up our webserver
 	addr := fmt.Sprintf(":%d", port)

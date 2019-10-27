@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -14,6 +16,9 @@ const tableScrapeInterval = 5 * time.Minute
 type Scraper struct {
 	client  jolokia.Client
 	stopped chan struct{}
+
+	// Everything below should use the mutex
+	mu sync.RWMutex
 
 	// Keep track of all our tables and when we last scraped them
 	tables          []jolokia.Table
@@ -31,15 +36,34 @@ type ScrapedMetrics struct {
 	MemoryStats      jolokia.MemoryStats
 	GCStats          []jolokia.GCStats
 
-	ScrapeDuration time.Duration
+	ScrapeDuration  time.Duration
+	ScrapeTimestamp time.Time
+}
+
+// TableStatsSorter sorts lists of table stats by keyspace.table name
+type TableStatsSorter []jolokia.TableStats
+
+func (t TableStatsSorter) Len() int      { return len(t) }
+func (t TableStatsSorter) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
+func (t TableStatsSorter) Less(i, j int) bool {
+	a := fmt.Sprintf("%s.%s", t[i].Table.KeyspaceName, t[i].Table.TableName)
+	b := fmt.Sprintf("%s.%s", t[j].Table.KeyspaceName, t[j].Table.TableName)
+	return a < b
 }
 
 // NewScraper returns a new instance of a Scraper
-func NewScraper(client jolokia.Client) Scraper {
-	return Scraper{
+func NewScraper(client jolokia.Client) *Scraper {
+	return &Scraper{
 		client:  client,
 		stopped: make(chan struct{}),
 	}
+}
+
+// Get returns the currently active metrics that have been scraped
+func (s *Scraper) Get() ScrapedMetrics {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.metrics
 }
 
 // Run blocks whilst attempting to scrape. It will stop scraping
@@ -79,13 +103,21 @@ func (s *Scraper) runScrape() {
 			logrus.Debugf("🦂 Could not refresh tables, bailing out")
 			return
 		}
+
+		s.mu.Lock()
 		s.tables = tables
 		s.lastTableScrape = time.Now()
+		s.mu.Unlock()
+
 		logrus.Debugf("🐝 Refreshed table list, got %d tables (took %d ms)", len(s.tables), time.Since(start).Milliseconds())
 	}
 
-	s.metrics = s.scrapeAllMetrics()
+	newScrapedMetrics := s.scrapeAllMetrics()
+
+	s.mu.Lock()
+	s.metrics = newScrapedMetrics
 	s.lastMetricsScrape = time.Now()
+	s.mu.Unlock()
 
 	logrus.Debugf("🕸️ Finished scrape for %d tables (took %d ms)", len(s.tables), time.Since(start).Milliseconds())
 }
@@ -128,6 +160,7 @@ func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 		MemoryStats:      memoryStats,
 		GCStats:          gcStats,
 		ScrapeDuration:   time.Since(scrapeStart),
+		ScrapeTimestamp:  time.Now(),
 	}
 }
 
@@ -188,6 +221,8 @@ func (s *Scraper) scrapeTableMetrics() []jolokia.TableStats {
 		}
 		tableStats = append(tableStats, res.tableStats)
 	}
+	sort.Sort(TableStatsSorter(tableStats))
+
 	return tableStats
 }
 
