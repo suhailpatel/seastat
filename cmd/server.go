@@ -37,7 +37,7 @@ func run(cmd *cobra.Command) {
 	}
 
 	if interval < 1*time.Second {
-		interval = 10 * time.Second
+		interval = 30 * time.Second
 	}
 
 	if port < 0 {
@@ -45,5 +45,12 @@ func run(cmd *cobra.Command) {
 	}
 
 	client := jolokia.Init(endpoint)
+
+	// Run a quick sanity check of the provided endpoint
+	version, err := client.Version()
+	if err != nil {
+		logrus.Fatalf("could not connect to Jolokia: %v", err)
+	}
+	logrus.Infof("☕ Communicating with Jolokia %s (%s)", version, endpoint)
 	server.Run(client, interval, port)
 }
