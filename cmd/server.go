@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/suhailpatel/seastat/jolokia"
 )
 
 var serverCmd = &cobra.Command{
@@ -32,6 +33,15 @@ func run(cmd *cobra.Command) {
 	}
 
 	if interval < 1*time.Second {
-		logrus.Fatalf("interval must be a minimum of 10 seconds")
+		interval = 10 * time.Second
 	}
+
+	// Test our connection to Jolokia to make sure everything is good!
+	client := jolokia.Init(endpoint)
+	version, err := client.Version()
+	if err != nil {
+		logrus.Fatalf("could not get version from Jolokia: %v", err)
+	}
+
+	logrus.Debugf("Running with Jolokia version: %v", version)
 }

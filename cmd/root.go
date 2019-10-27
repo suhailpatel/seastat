@@ -40,7 +40,7 @@ func init() {
 
 	// pre-start hooks
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("🌊 Seastat Cassandra Exporter %v (commit: %v)\n", Version, GitCommitHash)
+		fmt.Printf("🌊 Seastat Cassandra Exporter %v\n", Version)
 
 		lvl, err := logrus.ParseLevel(logVerbosity)
 		if err != nil {
