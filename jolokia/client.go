@@ -1,6 +1,8 @@
 package jolokia
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,7 +21,7 @@ type jolokiaClient struct {
 }
 
 var defaultHTTPClient = &http.Client{
-	Timeout: 15 * time.Second,
+	Timeout: 3 * time.Second,
 }
 
 // Init initalizes and returns a Client ready for calls. The endpoint should
@@ -68,19 +70,45 @@ func (c *jolokiaClient) Tables() ([]Table, error) {
 
 // TableStats gets all the stats for a given Table within Cassandra
 func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
-	// TODO(suhail): If this gets slow, we can send a bulk request instead with
-	// the fields we want. There's a bunch of metrics we ignore (but may add
-	// later depending on performance and need)
-	v, err := c.read("org.apache.cassandra.metrics", "type=Table",
-		fmt.Sprintf("keyspace=%s", table.KeyspaceName),
-		fmt.Sprintf("scope=%s", table.TableName), "name=*")
+	metricItems := []string{
+		"CoordinatorReadLatency",
+		"CoordinatorWriteLatency",
+		"CoordinatorScanLatency",
+		"ReadLatency",
+		"WriteLatency",
+		"RangeLatency",
+		"EstimatedPartitionCount",
+		"PendingCompactions",
+		"MaxPartitionSize",
+		"MeanPartitionSize",
+		"BloomFilterFalseRatio",
+		"KeyCacheHitRate",
+		"PercentRepaired",
+	}
+
+	mbeanGroups := make([][]string, 0, len(metricItems))
+	for _, name := range metricItems {
+		mbeanGroups = append(mbeanGroups, []string{
+			"type=Table",
+			fmt.Sprintf("keyspace=%s", table.KeyspaceName),
+			fmt.Sprintf("scope=%s", table.TableName),
+			fmt.Sprintf("name=%s", name),
+		})
+	}
+
+	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups)
 	if err != nil {
 		return TableStats{}, fmt.Errorf("err reading table: %v", err)
 	}
 
 	stats := TableStats{Table: table}
-	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
-		attributes := extractAttributes(string(key))
+	for _, item := range v.GetArray() {
+		if item.Get("status").GetInt64() != http.StatusOK {
+			continue
+		}
+
+		attributes := extractAttributes(string(item.Get("request", "mbean").GetStringBytes()))
+		val := item.Get("value")
 		switch attributes["name"] {
 		// Latency stats
 		case "CoordinatorReadLatency":
@@ -112,7 +140,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		case "PercentRepaired":
 			stats.PercentRepaired = FloatGauge(val.Get("Value").GetInt64())
 		}
-	})
+	}
 	return stats, nil
 }
 
@@ -248,18 +276,6 @@ func (c *jolokiaClient) GarbageCollectionStats() ([]GCStats, error) {
 	return stats, nil
 }
 
-// read is a convinience method around get. It takes in a metric name and a
-// series of key=value strings and constructs a query to /jolokia/read
-func (c *jolokiaClient) read(metricName string, kv ...string) (*fastjson.Value, error) {
-	var targetPath string
-	if len(kv) == 0 {
-		targetPath = metricName
-	} else {
-		targetPath = fmt.Sprintf("/jolokia/read/%v:%v", metricName, strings.Join(kv, ","))
-	}
-	return c.get(targetPath)
-}
-
 // get makes a GET request to the targetPath and returns the contents of the
 // body as a JSON value ready for items to be plucked. If any part of the
 // request pipeline fails, an err is returned
@@ -303,4 +319,63 @@ func (c *jolokiaClient) get(targetPath string) (*fastjson.Value, error) {
 	}
 
 	return v, nil
+}
+
+// bulkRequest does a Jolokia bulk request. You pass in a list of groups of
+// mbeans (one per request). Responses are provided in order of mbeanGroups
+// queried
+func (c *jolokiaClient) bulkRequest(metricName string, mbeanGroups [][]string) (*fastjson.Value, error) {
+	bodyBytes, err := buildBulkRequestBody(metricName, mbeanGroups)
+	if err != nil {
+		return nil, fmt.Errorf("could not build bulkRequest body: %v", err)
+	}
+	reader := bytes.NewReader(bodyBytes)
+
+	u, err := url.Parse(fmt.Sprintf("%v", c.endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = path.Join(u.Path, "/jolokia/read")
+
+	rsp, err := c.httpClient.Post(u.String(), "application/json", reader)
+	if err != nil {
+		return nil, err
+	}
+	defer rsp.Body.Close()
+
+	body, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var p fastjson.Parser
+	v, err := p.ParseBytes(body)
+	if err != nil {
+		return nil, fmt.Errorf("error whilst decoding: %v", err)
+	}
+	return v, nil
+}
+
+// read is a convinience method around get. It takes in a metric name and a
+// series of key=value strings and constructs a query to /jolokia/read
+func (c *jolokiaClient) read(metricName string, kv ...string) (*fastjson.Value, error) {
+	var targetPath string
+	if len(kv) == 0 {
+		targetPath = metricName
+	} else {
+		targetPath = fmt.Sprintf("/jolokia/read/%v:%v", metricName, strings.Join(kv, ","))
+	}
+	return c.get(targetPath)
+}
+
+func buildBulkRequestBody(metricName string, mbeanGroups [][]string) ([]byte, error) {
+	queries := make([]map[string]string, 0, len(mbeanGroups))
+	for _, group := range mbeanGroups {
+		mbean := fmt.Sprintf("%s:%s", metricName, strings.Join(group, ","))
+		queries = append(queries, map[string]string{
+			"type":  "read",
+			"mbean": mbean,
+		})
+	}
+	return json.Marshal(queries)
 }
