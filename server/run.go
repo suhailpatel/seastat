@@ -19,6 +19,11 @@ import (
 	"github.com/suhailpatel/seastat/jolokia"
 )
 
+type responseWriter struct {
+	w          http.ResponseWriter
+	statusCode int
+}
+
 // Run takes in the Jolokia client and some options and does everything needed
 // to start scraping and serving metrics
 func Run(client jolokia.Client, interval time.Duration, port int) {
@@ -59,9 +64,10 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 		Addr: addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
+			rspWriter := &responseWriter{w: w}
 			w.Header().Set("Seastat-Version", flags.Version)
-			http.DefaultServeMux.ServeHTTP(w, r)
-			logrus.Infof("%s %s %.2fms", r.Method, r.URL, time.Since(start).Seconds()*1000.0)
+			http.DefaultServeMux.ServeHTTP(rspWriter, r)
+			logrus.Infof("%d %s %s %.2fms", rspWriter.statusCode, r.Method, r.URL, time.Since(start).Seconds()*1000.0)
 		}),
 	}
 	http.Handle("/metrics", promhttp.Handler())
@@ -128,4 +134,17 @@ func handleHealthz(client jolokia.Client) http.HandlerFunc {
 		v, _ := json.Marshal(map[string]string{"jolokia": jolokiaVersion, "seastat": flags.Version})
 		w.Write(v)
 	}
+}
+
+func (rw *responseWriter) Write(data []byte) (int, error) {
+	return rw.w.Write(data)
+}
+
+func (rw *responseWriter) Header() http.Header {
+	return rw.w.Header()
+}
+
+func (rw *responseWriter) WriteHeader(statusCode int) {
+	rw.statusCode = statusCode
+	rw.w.WriteHeader(statusCode)
 }
