@@ -19,7 +19,7 @@ var versionCmd = &cobra.Command{
 	Short: "Prints the version of Seastat",
 	Long:  `Prints the version of Seastat`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Version: %v\n", Version)
+		fmt.Printf("Version: %v (Commit: %v)\n", Version, GitCommitHash)
 	},
 }
 
