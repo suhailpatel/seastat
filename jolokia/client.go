@@ -228,6 +228,106 @@ func (c *jolokiaClient) ThreadPoolStats() ([]ThreadPoolStats, error) {
 	return out, nil
 }
 
+// CompactionStats returns info about compactions which have happened or
+// are waiting in Cassandra
+func (c *jolokiaClient) CompactionStats() (CompactionStats, error) {
+	// We use the bulk request endpoint because otherwise there's a metric
+	// which returns compactions per table which is expensive (and we get
+	// from table stats anyway)
+	metricItems := []string{
+		"BytesCompacted",
+		"PendingTasks",
+		"CompletedTasks",
+	}
+
+	mbeanGroups := make([][]string, 0, len(metricItems))
+	for _, name := range metricItems {
+		mbeanGroups = append(mbeanGroups, []string{
+			"type=Compaction",
+			fmt.Sprintf("name=%s", name),
+		})
+	}
+
+	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups)
+	if err != nil {
+		return CompactionStats{}, fmt.Errorf("err reading compaction stats: %v", err)
+	}
+
+	stats := CompactionStats{}
+	for _, item := range v.GetArray() {
+		if item.Get("status").GetInt64() != http.StatusOK {
+			continue
+		}
+
+		attributes := extractAttributes(string(item.Get("request", "mbean").GetStringBytes()))
+		val := item.Get("value")
+		switch attributes["name"] {
+		case "BytesCompacted":
+			stats.BytesCompacted = Counter(val.Get("Count").GetInt64())
+		case "PendingTasks":
+			stats.PendingTasks = Gauge(val.Get("Value").GetInt64())
+		case "CompletedTasks":
+			// This is a counter (not a gauge) since it's monotonically increasing
+			// with the number of completed tasks
+			stats.CompletedTasks = Counter(val.Get("Value").GetInt64())
+		}
+	}
+	return stats, nil
+}
+
+// ClientRequestStats returns info about client requests which happen at the
+// coordinator level
+func (c *jolokiaClient) ClientRequestStats() ([]ClientRequestStats, error) {
+	v, err := c.read("org.apache.cassandra.metrics", "type=ClientRequest", "*")
+	if err != nil {
+		return []ClientRequestStats{}, fmt.Errorf("err reading client request stats: %v", err)
+	}
+
+	// The structure of this response is slightly weird because is just a flat
+	// list of stats, to keep on top of this, we use a map which we'll convert
+	// to a list later on
+	stats := map[string]*ClientRequestStats{}
+	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
+		attributes := extractAttributes(string(key))
+		requestType := attributes["scope"] // requestType is embedded as scope
+		stat, ok := stats[requestType]
+		if !ok {
+			stat = &ClientRequestStats{RequestType: requestType}
+			stats[requestType] = stat
+		}
+
+		switch attributes["name"] {
+		case "Latency":
+			stat.RequestLatency = parseLatency(val)
+		case "Timeouts":
+			// TODO(suhail): Cassandra 3.0 seems to have this as a meter
+			stat.Timeouts = Counter(val.Get("MeanRate").GetInt64() * val.Get("Count").GetInt64())
+		case "Failures":
+			// TODO(suhail): Cassandra 3.0 seems to have this as a meter
+			stat.Failures = Counter(val.Get("MeanRate").GetInt64() * val.Get("Count").GetInt64())
+		case "Unavailables":
+			// TODO(suhail): Cassandra 3.0 seems to have this as a meter
+			stat.Unavailables = Counter(val.Get("MeanRate").GetInt64() * val.Get("Count").GetInt64())
+		}
+	})
+
+	// We want this function to be determinstic output given two calls and
+	// assuming the response from Jolokia is consistent. Thus, we sort our
+	// pools in the output by Pool Name
+	names := make([]string, 0, len(stats))
+	for requestType := range stats {
+		names = append(names, requestType)
+	}
+	sort.Strings(names)
+
+	out := make([]ClientRequestStats, 0, len(names))
+	for _, requestType := range names {
+		out = append(out, *stats[requestType])
+	}
+	return out, nil
+
+}
+
 // ConnectedClients returns the number of connected clients via the Native
 // Protocol in Cassandra
 func (c *jolokiaClient) ConnectedClients() (Gauge, error) {

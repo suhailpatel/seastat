@@ -54,6 +54,14 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromThreadPoolCurrentlyBlockedTasks,
 		PromThreadPoolMaxPoolSize,
 
+		// CompactionStats
+		PromCompactionBytesCompacted,
+		PromCompactionPendingTasks,
+		PromCompactionCompletedTasks,
+
+		// ConnectedClients
+		PromConnectedClients,
+
 		// MemoryStats
 		PromMemoryStatsHeapUsed,
 		PromMemoryStatsNonHeapUsed,
@@ -81,6 +89,17 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(PromScrapeDuration,
 		prometheus.GaugeValue, float64(metrics.ScrapeDuration.Seconds()))
 
+	addTableStats(metrics, ch)
+	addCQLStats(metrics, ch)
+	addThreadPoolStats(metrics, ch)
+	addCompactionStats(metrics, ch)
+	addClientRequestStats(metrics, ch)
+	addConnectedClientStats(metrics, ch)
+	addMemoryStats(metrics, ch)
+	addGCStats(metrics, ch)
+}
+
+func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 	// TableStats
 	for _, stat := range metrics.TableStats {
 		ch <- prometheus.MustNewConstSummary(PromTableCoordinatorRead,
@@ -160,6 +179,12 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 			prometheus.GaugeValue, float64(stat.PercentRepaired),
 			stat.Table.KeyspaceName, stat.Table.TableName)
 	}
+}
+
+func addCQLStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.CQLStats == nil {
+		return
+	}
 
 	// CQLStats
 	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsCount,
@@ -172,6 +197,12 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 		prometheus.CounterValue, float64(metrics.CQLStats.RegularStatementsExecuted))
 	ch <- prometheus.MustNewConstMetric(PromCQLPreparedStatementsRatio,
 		prometheus.GaugeValue, float64(metrics.CQLStats.PreparedStatementsRatio))
+}
+
+func addThreadPoolStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.ThreadPoolStats == nil {
+		return
+	}
 
 	// ThreadPoolStats
 	for _, pool := range metrics.ThreadPoolStats {
@@ -188,12 +219,69 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromThreadPoolMaxPoolSize,
 			prometheus.GaugeValue, float64(pool.MaxPoolSize), pool.PoolName)
 	}
+}
+
+func addCompactionStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.CompactionStats == nil {
+		return
+	}
+
+	// CompactionStats
+	ch <- prometheus.MustNewConstMetric(PromCompactionBytesCompacted,
+		prometheus.CounterValue, float64(metrics.CompactionStats.BytesCompacted))
+	ch <- prometheus.MustNewConstMetric(PromCompactionPendingTasks,
+		prometheus.GaugeValue, float64(metrics.CompactionStats.PendingTasks))
+	ch <- prometheus.MustNewConstMetric(PromCompactionCompletedTasks,
+		prometheus.CounterValue, float64(metrics.CompactionStats.CompletedTasks))
+}
+
+func addClientRequestStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	// ClientRequestStats
+	for _, stat := range metrics.ClientRequestStats {
+		ch <- prometheus.MustNewConstSummary(PromClientRequestLatency,
+			uint64(stat.RequestLatency.Count),
+			float64(stat.RequestLatency.Count)*stat.RequestLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.RequestLatency.Percentile75.Seconds(),
+				95.0: stat.RequestLatency.Percentile95.Seconds(),
+				99.0: stat.RequestLatency.Percentile99.Seconds(),
+				99.9: stat.RequestLatency.Percentile999.Seconds(),
+			}, stat.RequestType)
+		ch <- prometheus.MustNewConstMetric(PromClientRequestTimeouts,
+			prometheus.CounterValue, float64(stat.Timeouts), stat.RequestType)
+		ch <- prometheus.MustNewConstMetric(PromClientRequestFailures,
+			prometheus.CounterValue, float64(stat.Failures), stat.RequestType)
+		ch <- prometheus.MustNewConstMetric(PromClientRequestUnavailable,
+			prometheus.CounterValue, float64(stat.Unavailables), stat.RequestType)
+
+	}
+}
+
+func addConnectedClientStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.ConnectedClients == nil {
+		return
+	}
+
+	ch <- prometheus.MustNewConstMetric(PromConnectedClients,
+		prometheus.GaugeValue, float64(*metrics.ConnectedClients))
+}
+
+func addMemoryStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.MemoryStats == nil {
+		return
+	}
 
 	// MemoryStats
 	ch <- prometheus.MustNewConstMetric(PromMemoryStatsHeapUsed,
 		prometheus.GaugeValue, float64(metrics.MemoryStats.HeapUsed))
 	ch <- prometheus.MustNewConstMetric(PromMemoryStatsNonHeapUsed,
 		prometheus.GaugeValue, float64(metrics.MemoryStats.NonHeapUsed))
+}
+
+func addGCStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.GCStats == nil {
+		return
+	}
 
 	// GCStats
 	for _, stat := range metrics.GCStats {

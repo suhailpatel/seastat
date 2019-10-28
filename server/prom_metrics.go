@@ -170,6 +170,63 @@ var (
 	)
 )
 
+// CompactionStats
+var (
+	PromCompactionBytesCompacted = prometheus.NewDesc(
+		"seastat_compaction_bytes_compacted_total",
+		"Total amount of bytes compacted across all compactions",
+		[]string{}, nil,
+	)
+
+	PromCompactionPendingTasks = prometheus.NewDesc(
+		"seastat_compaction_pending_tasks",
+		"Number of pending compaction tasks",
+		[]string{}, nil,
+	)
+
+	PromCompactionCompletedTasks = prometheus.NewDesc(
+		"seastat_compaction_completed_tasks_total",
+		"Number of completed compaction tasks",
+		[]string{}, nil,
+	)
+)
+
+// ClientRequestStats
+var (
+	PromClientRequestLatency = prometheus.NewDesc(
+		"seastat_client_request_latency",
+		"Coordinator request latency",
+		[]string{"request_type"}, nil,
+	)
+
+	PromClientRequestTimeouts = prometheus.NewDesc(
+		"seastat_client_request_timeout_total",
+		"Total number of coordinated request timeouts",
+		[]string{"request_type"}, nil,
+	)
+
+	PromClientRequestFailures = prometheus.NewDesc(
+		"seastat_client_request_failure_total",
+		"Total number of coordinated request failures",
+		[]string{"request_type"}, nil,
+	)
+
+	PromClientRequestUnavailable = prometheus.NewDesc(
+		"seastat_client_request_unavailable_total",
+		"Total number of coordinated request unavailable",
+		[]string{"request_type"}, nil,
+	)
+)
+
+// ConnectedClientStats
+var (
+	PromConnectedClients = prometheus.NewDesc(
+		"seastat_connected_clients",
+		"Number of connected clients",
+		[]string{}, nil,
+	)
+)
+
 // MemoryStats
 var (
 	PromMemoryStatsHeapUsed = prometheus.NewDesc(

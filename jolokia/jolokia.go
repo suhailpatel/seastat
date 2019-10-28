@@ -46,6 +46,14 @@ type Client interface {
 	// in Cassandra
 	ThreadPoolStats() ([]ThreadPoolStats, error)
 
+	// CompactionStats returns info about compactions which have happened
+	// or are waiting in Cassandra
+	CompactionStats() (CompactionStats, error)
+
+	// ClientRequestStats returns info about client requests which happen
+	// at the coordinator level
+	ClientRequestStats() ([]ClientRequestStats, error)
+
 	// ConnectedClients returns the number of connected clients via the
 	// Native Protocol in Cassandra
 	ConnectedClients() (Gauge, error)
@@ -108,6 +116,22 @@ type ThreadPoolStats struct {
 	TotalBlockedTasks     Counter
 	CurrentlyBlockedTasks Counter
 	MaxPoolSize           Gauge
+}
+
+// CompactionStats embeds stats for Compaction
+type CompactionStats struct {
+	BytesCompacted Counter
+	PendingTasks   Gauge
+	CompletedTasks Counter
+}
+
+// ClientRequestStats embeds stats for client requests
+type ClientRequestStats struct {
+	RequestType    string
+	RequestLatency Latency
+	Timeouts       Counter
+	Failures       Counter
+	Unavailables   Counter
 }
 
 // MemoryStats embeds stats about Java memory such as how much

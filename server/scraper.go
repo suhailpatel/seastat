@@ -13,6 +13,8 @@ import (
 // tableScrapeInterval defines how often we will ask for a full table list
 const tableScrapeInterval = 5 * time.Minute
 
+// Scraper handles coordination of scraping activties and keeps track of
+// the active metrics
 type Scraper struct {
 	client  jolokia.Client
 	stopped chan struct{}
@@ -28,13 +30,16 @@ type Scraper struct {
 	lastMetricsScrape time.Time
 }
 
+// ScrapedMetrics holds all the metrics we've scraped
 type ScrapedMetrics struct {
-	TableStats       []jolokia.TableStats
-	CQLStats         jolokia.CQLStats
-	ThreadPoolStats  []jolokia.ThreadPoolStats
-	ConnectedClients jolokia.Gauge
-	MemoryStats      jolokia.MemoryStats
-	GCStats          []jolokia.GCStats
+	TableStats         []jolokia.TableStats
+	CQLStats           *jolokia.CQLStats
+	ThreadPoolStats    []jolokia.ThreadPoolStats
+	CompactionStats    *jolokia.CompactionStats
+	ClientRequestStats []jolokia.ClientRequestStats
+	ConnectedClients   *jolokia.Gauge
+	MemoryStats        *jolokia.MemoryStats
+	GCStats            []jolokia.GCStats
 
 	ScrapeDuration time.Duration
 	ScrapeTime     time.Time
@@ -124,44 +129,63 @@ func (s *Scraper) runScrape() {
 
 func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 	scrapeStart := time.Now()
+	out := ScrapedMetrics{}
 
 	tableStats := s.scrapeTableMetrics()
+	out.TableStats = tableStats
 
 	cqlStats, err := s.client.CQLStats()
 	if err != nil {
 		logrus.Debugf("🦂 Could not get CQL stats: %v", err)
+	} else {
+		out.CQLStats = &cqlStats
 	}
 
 	tpStats, err := s.client.ThreadPoolStats()
 	if err != nil {
 		logrus.Debugf("🦂 Could not get ThreadPool stats: %v", err)
+	} else {
+		out.ThreadPoolStats = tpStats
+	}
+
+	compactionStats, err := s.client.CompactionStats()
+	if err != nil {
+		logrus.Debugf("🦂 Could not get Compaction stats: %v", err)
+	} else {
+		out.CompactionStats = &compactionStats
+	}
+
+	clientReqStats, err := s.client.ClientRequestStats()
+	if err != nil {
+		logrus.Debugf("🦂 Could not get Client Request stats: %v", err)
+	} else {
+		out.ClientRequestStats = clientReqStats
 	}
 
 	connectedClients, err := s.client.ConnectedClients()
 	if err != nil {
 		logrus.Debugf("🦂 Could not get Client stats: %v", err)
+	} else {
+		out.ConnectedClients = &connectedClients
 	}
 
 	memoryStats, err := s.client.MemoryStats()
 	if err != nil {
 		logrus.Debugf("🦂 Could not get Memory stats: %v", err)
+	} else {
+		out.MemoryStats = &memoryStats
 	}
 
 	gcStats, err := s.client.GarbageCollectionStats()
 	if err != nil {
 		logrus.Debugf("🦂 Could not get GC stats: %v", err)
+	} else {
+		out.GCStats = gcStats
 	}
 
-	return ScrapedMetrics{
-		TableStats:       tableStats,
-		CQLStats:         cqlStats,
-		ThreadPoolStats:  tpStats,
-		ConnectedClients: connectedClients,
-		MemoryStats:      memoryStats,
-		GCStats:          gcStats,
-		ScrapeDuration:   time.Since(scrapeStart),
-		ScrapeTime:       time.Now(),
-	}
+	out.ScrapeDuration = time.Since(scrapeStart)
+	out.ScrapeTime = time.Now()
+	return out
 }
 
 func (s *Scraper) scrapeTableMetrics() []jolokia.TableStats {
