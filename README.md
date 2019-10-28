@@ -131,7 +131,7 @@ Seastat also exposes some internal metrics of how long the scrape took and the t
 
 # Usage
 
-**Note:** Seastat is in infancy changes, changes to the interface will be made until it reaches 1.0.0
+**Note:** Seastat is in infancy, changes to the interface will be made until it reaches 1.0.0 💪
 
 Building Seastat is just like building any other Go application. You will need Go 1.13 or above to build Seastat.
 
@@ -159,7 +159,7 @@ $ ./seastat server -p 8080 -v debug
 
 - Seastat does not support Jolokia auth
 - More batching of requests can achieve more speed!
-- The code has been written to be easily tested, but needs some tests!
+- The code has been written to be easily tested, but needs some more tests!
 
 # Author
 
