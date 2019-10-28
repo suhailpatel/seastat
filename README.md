@@ -155,6 +155,7 @@ $ ./seastat server -p 8080 -v debug
 
 - Seastat does not support Jolokia auth
 - More batching of requests can achieve more speed!
+- The code has been written to be easily tested, but needs some tests!
 
 # Author
 
