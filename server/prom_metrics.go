@@ -20,37 +20,37 @@ var (
 // TableStats
 var (
 	PromTableCoordinatorRead = prometheus.NewDesc(
-		"seastat_table_coordinator_read_latency",
+		"seastat_table_coordinator_read_latency_seconds",
 		"Coordinator table read latency",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableCoordinatorWrite = prometheus.NewDesc(
-		"seastat_table_coordinator_write_latency",
+		"seastat_table_coordinator_write_latency_seconds",
 		"Coordinator table write latency",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableCoordinatorRangeScan = prometheus.NewDesc(
-		"seastat_table_coordinator_range_scan_latency",
+		"seastat_table_coordinator_range_scan_latency_seconds",
 		"Coordinator table range scan latency",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableRead = prometheus.NewDesc(
-		"seastat_table_read_latency",
+		"seastat_table_read_latency_seconds",
 		"Table read latency",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableWrite = prometheus.NewDesc(
-		"seastat_table_write_latency",
+		"seastat_table_write_latency_seconds",
 		"Table write latency",
 		[]string{"keyspace", "table"}, nil,
 	)
 
 	PromTableRangeScan = prometheus.NewDesc(
-		"seastat_table_range_scan_latency",
+		"seastat_table_range_scan_latency_seconds",
 		"Table range scan latency",
 		[]string{"keyspace", "table"}, nil,
 	)
@@ -194,7 +194,7 @@ var (
 // ClientRequestStats
 var (
 	PromClientRequestLatency = prometheus.NewDesc(
-		"seastat_client_request_latency",
+		"seastat_client_request_latency_seconds",
 		"Coordinator request latency",
 		[]string{"request_type"}, nil,
 	)
