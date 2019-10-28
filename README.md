@@ -133,21 +133,21 @@ Seastat also exposes some internal metrics of how long the scrape took and the t
 
 Building Seastat is just like building any other Go application. You can use the included `make` targets
 
-```
-# To build a version for your current OS and Arch
+```shell
+$ # To build a version for your current OS and Arch
 $ make build
 
-# To build a version for Linux 64-bit
+$ # To build a version for Linux 64-bit
 $ make build-linux
 ```
 
 To run Seastat
 
-```
-# To run on port 8080 (defaults to INFO logging and above)
+```shell
+$ # To run on port 8080 (defaults to INFO logging and above)
 $ ./seastat server -p 8080
 
-# To run on port 8080 with debug logging
+$ # To run on port 8080 with debug logging
 $ ./seastat server -p 8080 -v debug
 ```
 
