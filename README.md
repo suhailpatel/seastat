@@ -101,7 +101,7 @@ This metric does not have any labels
 | `seastat_connected_clients` | Number of connected clients | Gauge |
 | `seastat_client_request_timeout_total` | Total number of coordinated request timeouts | Counter |
 
-### Memory Metrics
+## Memory Metrics
 
 These metrics are from the Java process itself and have no labels
 
