@@ -131,7 +131,9 @@ Seastat also exposes some internal metrics of how long the scrape took and the t
 
 # Usage
 
-Building Seastat is just like building any other Go application. You can use the included `make` targets
+Building Seastat is just like building any other Go application. You will need Go 1.13 or above to build Seastat.
+
+You can use the included `make` targets
 
 ```shell
 $ # To build a version for your current OS and Arch
