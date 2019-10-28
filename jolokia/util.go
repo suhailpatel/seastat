@@ -45,18 +45,18 @@ func parseLatency(val *fastjson.Value) Latency {
 }
 
 func parseDurationString(in string) time.Duration {
-	switch in {
-	case "nanoseconds":
+	switch strings.ToLower(in) {
+	case "nanosecond", "nanoseconds", "ns", "nsec":
 		return time.Nanosecond
-	case "microseconds":
+	case "microsecond", "microseconds", "μs":
 		return time.Microsecond
-	case "milliseconds":
+	case "millisecond", "milliseconds", "ms":
 		return time.Millisecond
-	case "seconds":
+	case "second", "seconds", "sec", "secs":
 		return time.Second
-	case "minutes":
+	case "minute", "minutes", "min", "mins":
 		return time.Minute
-	case "hours":
+	case "hour", "hours", "hr", "hrs":
 		return time.Hour
 	default:
 		return time.Microsecond
