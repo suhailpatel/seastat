@@ -253,7 +253,6 @@ func addClientRequestStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) 
 			prometheus.CounterValue, float64(stat.Failures), stat.RequestType)
 		ch <- prometheus.MustNewConstMetric(PromClientRequestUnavailable,
 			prometheus.CounterValue, float64(stat.Unavailables), stat.RequestType)
-
 	}
 }
 
