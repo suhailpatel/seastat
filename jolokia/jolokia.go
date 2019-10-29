@@ -101,19 +101,21 @@ type TableStats struct {
 	RangeLatency     Latency
 
 	// Table specific stats
-	EstimatedPartitionCount Gauge
-	PendingCompactions      Gauge
-	LiveDiskSpaceUsed       Gauge
-	TotalDiskSpaceUsed      Gauge
-	LiveSSTableCount        Gauge
-	SSTablesPerRead         Histogram
-	MaxPartitionSize        BytesGauge
-	MeanPartitionSize       BytesGauge
-	BloomFilterFalseRatio   FloatGauge
-	TombstonesScanned       Histogram
-	LiveCellsScanned        Histogram
-	KeyCacheHitRate         FloatGauge
-	PercentRepaired         FloatGauge
+	EstimatedPartitionCount  Gauge
+	PendingCompactions       Gauge
+	LiveDiskSpaceUsed        Gauge
+	TotalDiskSpaceUsed       Gauge
+	LiveSSTableCount         Gauge
+	SSTablesPerRead          Histogram
+	MaxPartitionSize         BytesGauge
+	MeanPartitionSize        BytesGauge
+	BloomFilterFalseRatio    FloatGauge
+	TombstonesScanned        Histogram
+	LiveCellsScanned         Histogram
+	KeyCacheHitRate          FloatGauge
+	PercentRepaired          FloatGauge
+	SpeculativeRetries       Counter
+	SpeculativeFailedRetries Counter
 }
 
 // CQLStats embeds stats about Prepared and Regular CQL statements
