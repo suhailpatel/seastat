@@ -77,13 +77,22 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		"ReadLatency",
 		"WriteLatency",
 		"RangeLatency",
+
 		"EstimatedPartitionCount",
 		"PendingCompactions",
+		"LiveDiskSpaceUsed",
+		"TotalDiskSpaceUsed",
+		"LiveSSTableCount",
+		"SSTablesPerReadHistogram",
 		"MaxPartitionSize",
 		"MeanPartitionSize",
 		"BloomFilterFalseRatio",
+		"TombstoneScannedHistogram",
+		"LiveCellsScannedHistogram",
 		"KeyCacheHitRate",
 		"PercentRepaired",
+		"SpeculativeRetries",
+		"SpeculativeFailedRetries",
 	}
 
 	mbeanGroups := make([][]string, 0, len(metricItems))
@@ -129,16 +138,32 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 			stats.EstimatedPartitionCount = Gauge(val.Get("Value").GetInt64())
 		case "PendingCompactions":
 			stats.PendingCompactions = Gauge(val.Get("Value").GetInt64())
+		case "LiveDiskSpaceUsed":
+			stats.LiveDiskSpaceUsed = Gauge(val.Get("Count").GetInt64())
+		case "TotalDiskSpaceUsed":
+			stats.TotalDiskSpaceUsed = Gauge(val.Get("Count").GetInt64())
+		case "LiveSSTableCount":
+			stats.LiveSSTables = Gauge(val.Get("Value").GetInt64())
+		case "SSTablesPerReadHistogram":
+			stats.SSTablesPerRead = parseHistogram(val.Get("Value"))
 		case "MaxPartitionSize":
 			stats.MaxPartitionSize = BytesGauge(val.Get("Value").GetInt64())
 		case "MeanPartitionSize":
 			stats.MeanPartitionSize = BytesGauge(val.Get("Value").GetInt64())
 		case "BloomFilterFalseRatio":
 			stats.BloomFilterFalseRatio = FloatGauge(val.Get("Value").GetInt64())
+		case "TombstoneScannedHistogram":
+			stats.TombstonesScanned = parseHistogram(val.Get("Value"))
+		case "LiveCellsScannedHistogram":
+			stats.LiveCellsScanned = parseHistogram(val.Get("Value"))
 		case "KeyCacheHitRate":
 			stats.KeyCacheHitRate = FloatGauge(val.Get("Value").GetInt64())
 		case "PercentRepaired":
 			stats.PercentRepaired = FloatGauge(val.Get("Value").GetInt64())
+		case "SpeculativeRetries":
+			stats.SpeculativeRetries = Counter(val.Get("Count").GetInt64())
+		case "SpeculativeFailedRetries":
+			stats.SpeculativeFailedRetries = Counter(val.Get("Count").GetInt64())
 		}
 	}
 	return stats, nil

@@ -190,9 +190,9 @@ func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 
 func (s *Scraper) scrapeTableMetrics() []jolokia.TableStats {
 	// The goal of this function is to scrape the table metrics in parallel.
-	// A few numbers were tried and 8 seemed to be the sweet spot with Jolokia.
+	// A few numbers were tried and 10 seemed to be a sweet spot with Jolokia.
 	// Ramping this too high may lead to stuck conns
-	const workers = 8
+	const workers = 10
 
 	type result struct {
 		table      jolokia.Table

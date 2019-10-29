@@ -33,11 +33,18 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromTableRangeScan,
 		PromTableEstimatedPartitionCount,
 		PromTablePendingCompactions,
+		PromTableLiveDiskSpaceUsed,
+		PromTableTotalDiskSpaceUsed,
+		PromTableLiveSSTables,
 		PromTableMaxPartitionSize,
 		PromTableMeanPartitionSize,
 		PromTableBloomFilterFalseRatio,
+		PromTableTombstonesScanned,
+		PromTableLiveCellsScanned,
 		PromTableKeyCacheHitRate,
 		PromTablePercentRepaired,
+		PromTableSpeculativeRetries,
+		PromTableSpeculativeFailedRetries,
 
 		// CQLStats
 		PromCQLPreparedStatementsCount,
@@ -163,6 +170,24 @@ func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromTablePendingCompactions,
 			prometheus.GaugeValue, float64(stat.PendingCompactions),
 			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableLiveDiskSpaceUsed,
+			prometheus.GaugeValue, float64(stat.LiveDiskSpaceUsed),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableTotalDiskSpaceUsed,
+			prometheus.GaugeValue, float64(stat.TotalDiskSpaceUsed),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableLiveSSTables,
+			prometheus.GaugeValue, float64(stat.LiveSSTables),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableSSTablesPerRead,
+			uint64(stat.SSTablesPerRead.Count),
+			float64(stat.SSTablesPerRead.Count)*float64(stat.SSTablesPerRead.Mean),
+			map[float64]float64{
+				75.0: float64(stat.SSTablesPerRead.Percentile75),
+				95.0: float64(stat.SSTablesPerRead.Percentile95),
+				99.0: float64(stat.SSTablesPerRead.Percentile99),
+				99.9: float64(stat.SSTablesPerRead.Percentile999),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
 		ch <- prometheus.MustNewConstMetric(PromTableMaxPartitionSize,
 			prometheus.GaugeValue, float64(stat.MaxPartitionSize),
 			stat.Table.KeyspaceName, stat.Table.TableName)
@@ -172,11 +197,35 @@ func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromTableBloomFilterFalseRatio,
 			prometheus.GaugeValue, float64(stat.BloomFilterFalseRatio),
 			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableTombstonesScanned,
+			uint64(stat.TombstonesScanned.Count),
+			float64(stat.TombstonesScanned.Count)*float64(stat.TombstonesScanned.Mean),
+			map[float64]float64{
+				75.0: float64(stat.TombstonesScanned.Percentile75),
+				95.0: float64(stat.TombstonesScanned.Percentile95),
+				99.0: float64(stat.TombstonesScanned.Percentile99),
+				99.9: float64(stat.TombstonesScanned.Percentile999),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableLiveCellsScanned,
+			uint64(stat.LiveCellsScanned.Count),
+			float64(stat.LiveCellsScanned.Count)*float64(stat.LiveCellsScanned.Mean),
+			map[float64]float64{
+				75.0: float64(stat.LiveCellsScanned.Percentile75),
+				95.0: float64(stat.LiveCellsScanned.Percentile95),
+				99.0: float64(stat.LiveCellsScanned.Percentile99),
+				99.9: float64(stat.LiveCellsScanned.Percentile999),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
 		ch <- prometheus.MustNewConstMetric(PromTableKeyCacheHitRate,
 			prometheus.GaugeValue, float64(stat.KeyCacheHitRate),
 			stat.Table.KeyspaceName, stat.Table.TableName)
 		ch <- prometheus.MustNewConstMetric(PromTablePercentRepaired,
 			prometheus.GaugeValue, float64(stat.PercentRepaired),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableSpeculativeRetries,
+			prometheus.GaugeValue, float64(stat.SpeculativeRetries),
+			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableSpeculativeFailedRetries,
+			prometheus.GaugeValue, float64(stat.SpeculativeFailedRetries),
 			stat.Table.KeyspaceName, stat.Table.TableName)
 	}
 }

@@ -12,7 +12,20 @@ type (
 	BytesGauge Gauge
 	// FloatGauge represents a point-in-time (float) value
 	FloatGauge float64
-	// Latency represents a latency distribution
+	// Histogram represents a Histogram distribution
+	Histogram struct {
+		Minimum       FloatGauge
+		Maximum       FloatGauge
+		Percentile75  FloatGauge
+		Percentile95  FloatGauge
+		Percentile99  FloatGauge
+		Percentile999 FloatGauge
+		Mean          FloatGauge
+		Count         Counter
+	}
+	// Latency represents a latency distribution. It's similar
+	// to a Histogram with the caveat that the fields are more
+	// based around durations than gauge values
 	Latency struct {
 		Minimum       time.Duration
 		Maximum       time.Duration
@@ -88,13 +101,21 @@ type TableStats struct {
 	RangeLatency     Latency
 
 	// Table specific stats
-	EstimatedPartitionCount Gauge
-	PendingCompactions      Gauge
-	MaxPartitionSize        BytesGauge
-	MeanPartitionSize       BytesGauge
-	BloomFilterFalseRatio   FloatGauge
-	KeyCacheHitRate         FloatGauge
-	PercentRepaired         FloatGauge
+	EstimatedPartitionCount  Gauge
+	PendingCompactions       Gauge
+	LiveDiskSpaceUsed        Gauge
+	TotalDiskSpaceUsed       Gauge
+	LiveSSTables             Gauge
+	SSTablesPerRead          Histogram
+	MaxPartitionSize         BytesGauge
+	MeanPartitionSize        BytesGauge
+	BloomFilterFalseRatio    FloatGauge
+	TombstonesScanned        Histogram
+	LiveCellsScanned         Histogram
+	KeyCacheHitRate          FloatGauge
+	PercentRepaired          FloatGauge
+	SpeculativeRetries       Counter
+	SpeculativeFailedRetries Counter
 }
 
 // CQLStats embeds stats about Prepared and Regular CQL statements
