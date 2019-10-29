@@ -105,7 +105,7 @@ type TableStats struct {
 	PendingCompactions       Gauge
 	LiveDiskSpaceUsed        Gauge
 	TotalDiskSpaceUsed       Gauge
-	LiveSSTableCount         Gauge
+	LiveSSTables             Gauge
 	SSTablesPerRead          Histogram
 	MaxPartitionSize         BytesGauge
 	MeanPartitionSize        BytesGauge

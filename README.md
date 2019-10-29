@@ -12,7 +12,7 @@ Seastat is different to other exporters for Cassandra such as the [JMX Exporter]
 
 Seastat is used for scraping metrics for more than 1,000 tables across hundreds of keyspaces every minute without sweat 😅. It is built for performance by batching queries when it makes sense and limiting the amount of data it exposes to be scalable. More metrics may be added in the future but with careful consideration to not negatively impact performance.
 
-A very (non-scientific) test with 4000 tables across 200 keyspaces took between 7-10 seconds to scrape all stats exposed. Both the standalone Cassandra Exporter and the Prometheus JMX Exporter took over 10 minutes because they query for each MBean for each table individually which is very expensive. This test was done using Cassandra running in the Docker harness (with 4 cores and 8GB of RAM on  a completely idle cluster of 1). Your mileage may vary and you should do your own tests!
+A very (non-scientific) test with 4000 tables across 200 keyspaces took between 10-15 seconds to scrape all stats exposed. Both the standalone Cassandra Exporter and the Prometheus JMX Exporter took over 10 minutes because they query for each MBean for each table individually which is very expensive. This test was done using Cassandra running in the Docker harness (with 4 cores and 8GB of RAM on  a completely idle cluster of 1). Your mileage may vary and you should do your own tests!
 
 # Requirements
 
@@ -40,11 +40,19 @@ These metrics have a labels of `keyspace` and `table` applied to them
 | `seastat_table_range_scan_latency_seconds` | Range Scan Latency for queries which this node is involved in | Summary |
 | `seastat_table_estimated_partitions` | Number of partitions in this table (estimated) | Gauge |
 | `seastat_table_pending_compactions` | Number of pending compactions on this table | Gauge |
+| `seastat_table_live_disk_space_used_bytes` | Disk space used for live cells in bytes | Gauge |
+| `seastat_table_total_disk_space_used_bytes` | Disk space used for all data in bytes | Gauge |
+| `seastat_table_live_sstables` | Number of live SSTables | Gauge |
+| `seastat_table_sstables_per_read` | Number of SSTables consulted per read query | Summary |
 | `seastat_table_max_partition_size_bytes` | Max Partition Size in bytes | Gauge |
 | `seastat_table_mean_partition_size_bytes` | Mean Partition Size in bytes | Gauge |
 | `seastat_table_bloom_filter_false_ratio` | False positive ratio of table’s bloom filter | Gauge |
+| `seastat_table_tombstones_scanned` | Number of tombstones scanned per read query | Summary |
+| `seastat_table_live_cells_scanned` | Number of live cells scanned per read query | Summary |
 | `seastat_table_key_cache_hit_percent` | Percent of key cache hits | Gauge
 | `seastat_table_repaired_percent` | Percent of table repaired | Gauge
+| `seastat_table_speculative_retries_total` | Total amount of speculative retries | Counter
+| `seastat_table_speculative_failed_retries_total` | Total amount of speculative failed retries | Counter
 
 ## CQL Metrics
 

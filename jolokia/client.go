@@ -143,7 +143,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		case "TotalDiskSpaceUsed":
 			stats.TotalDiskSpaceUsed = Gauge(val.Get("Count").GetInt64())
 		case "LiveSSTableCount":
-			stats.LiveSSTableCount = Gauge(val.Get("Value").GetInt64())
+			stats.LiveSSTables = Gauge(val.Get("Value").GetInt64())
 		case "SSTablesPerReadHistogram":
 			stats.SSTablesPerRead = parseHistogram(val.Get("Value"))
 		case "MaxPartitionSize":

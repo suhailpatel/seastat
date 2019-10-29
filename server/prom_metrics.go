@@ -67,6 +67,30 @@ var (
 		[]string{"keyspace", "table"}, nil,
 	)
 
+	PromTableLiveDiskSpaceUsed = prometheus.NewDesc(
+		"seastat_table_live_disk_space_used_bytes",
+		"Disk space used for live cells in bytes",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableTotalDiskSpaceUsed = prometheus.NewDesc(
+		"seastat_table_total_disk_space_used_bytes",
+		"Disk space used for all data in bytes",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableLiveSSTables = prometheus.NewDesc(
+		"seastat_table_live_sstables",
+		"Number of live SSTables",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableSSTablesPerRead = prometheus.NewDesc(
+		"seastat_table_sstables_per_read",
+		"Number of SSTables consulted per read query",
+		[]string{"keyspace", "table"}, nil,
+	)
+
 	PromTableMaxPartitionSize = prometheus.NewDesc(
 		"seastat_table_max_partition_size_bytes",
 		"Max Partition Size in bytes",
@@ -85,6 +109,18 @@ var (
 		[]string{"keyspace", "table"}, nil,
 	)
 
+	PromTableTombstonesScanned = prometheus.NewDesc(
+		"seastat_table_tombstones_scanned",
+		"Number of tombstones scanned per read query",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableLiveCellsScanned = prometheus.NewDesc(
+		"seastat_table_live_cells_scanned",
+		"Number of live cells scanned per read query",
+		[]string{"keyspace", "table"}, nil,
+	)
+
 	PromTableKeyCacheHitRate = prometheus.NewDesc(
 		"seastat_table_key_cache_hit_percent",
 		"Percent of key cache hits",
@@ -94,6 +130,18 @@ var (
 	PromTablePercentRepaired = prometheus.NewDesc(
 		"seastat_table_repaired_percent",
 		"Percent of table repaired",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableSpeculativeRetries = prometheus.NewDesc(
+		"seastat_table_speculative_retries_total",
+		"Total amount of speculative retries",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableSpeculativeFailedRetries = prometheus.NewDesc(
+		"seastat_table_speculative_failed_retries_total",
+		"Total amount of speculative failed retries",
 		[]string{"keyspace", "table"}, nil,
 	)
 )
