@@ -7,6 +7,34 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+// parseHistogram takes a histogram map and converts the various fields
+// into a Histogram struct object
+//
+//    "StdDev": 0,
+//    "75thPercentile": 0,
+//    "Mean": null,
+//    "98thPercentile": 0,
+//    "Min": 0,
+//    "95thPercentile": 0,
+//    "99thPercentile": 0,
+//    "Max": 0,
+//    "999thPercentile": 0,
+//    "Count": 5,
+//    "50thPercentile": 0
+//
+func parseHistogram(val *fastjson.Value) Histogram {
+	return Histogram{
+		Minimum:       FloatGauge(val.Get("Min").GetFloat64()),
+		Maximum:       FloatGauge(val.Get("Max").GetFloat64()),
+		Percentile75:  FloatGauge(val.Get("75thPercentile").GetFloat64()),
+		Percentile95:  FloatGauge(val.Get("95thPercentile").GetFloat64()),
+		Percentile99:  FloatGauge(val.Get("99thPercentile").GetFloat64()),
+		Percentile999: FloatGauge(val.Get("999thPercentile").GetFloat64()),
+		Mean:          FloatGauge(val.Get("Mean").GetFloat64()),
+		Count:         Counter(val.Get("Count").GetInt64()),
+	}
+}
+
 // parseLatency takes a latency map and converts the various fields into
 // a Latency struct object so it's easier to work with
 //
