@@ -541,7 +541,7 @@ func buildBulkRequestBody(metricName string, mbeanGroups [][]string, attributes 
 			"mbean": fmt.Sprintf("%s:%s", metricName, strings.Join(group, ",")),
 		}
 		if len(attributes) > 0 && len(attributes[idx]) > 0 {
-			m["attributes"] = attributes[idx]
+			m["attribute"] = attributes[idx]
 		}
 		queries = append(queries, m)
 	}
