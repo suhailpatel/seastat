@@ -128,6 +128,16 @@ These metrics are from the Java process itself. Each metric has a single label `
 | `seastat_gc_last_duration_seconds` | Duration of Last GC | Gauge |
 | `seastat_gc_accumulated_duration_seconds` | Accumulated durations of GC | Counter |
 
+## Storage Metrics
+
+These metrics come from Cassandra's storage service which keeps track of the cluster state from the perspective of each node
+
+| Name          | Description   | Type |
+| ------------- | ------------- | ---- |
+| `seastat_storage_keyspaces` | Number of keyspaces reported by Cassandra | Gauge |
+| `seastat_storage_tokens` | Number of tokens reported by Cassandra  | Gauge |
+| `seastat_storage_node_status` | Status (`live`, `unreachable`, `joining`, `moving`, `leaving`) of each node in the cluster (tagged by node and status) | Gauge |
+
 ## Scrape Metrics
 
 Seastat also exposes some internal metrics of how long the scrape took and the timestamp of the last scrape
