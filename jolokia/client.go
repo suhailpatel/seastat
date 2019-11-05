@@ -401,6 +401,26 @@ func (c *jolokiaClient) GarbageCollectionStats() ([]GCStats, error) {
 	return stats, nil
 }
 
+// StorageStats gives information about the storage layer of Cassandra which
+// encapsulates things like number of keyspaces and what nodes are part of
+// the cluster
+func (c *jolokiaClient) StorageStats() (StorageStats, error) {
+	v, err := c.read("org.apache.cassandra.db", "type=StorageService")
+	if err != nil {
+		return StorageStats{}, fmt.Errorf("err reading storage stats: %v", err)
+	}
+
+	return StorageStats{
+		KeyspaceCount:    Counter(len(v.Get("value", "Keyspaces").GetArray())),
+		TokenCount:       Counter(len(v.Get("value", "Tokens").GetArray())),
+		LiveNodes:        valueToStringArray(v.Get("value", "LiveNodes").GetArray()),
+		UnreachableNodes: valueToStringArray(v.Get("value", "UnreachableNodes").GetArray()),
+		JoiningNodes:     valueToStringArray(v.Get("value", "JoiningNodes").GetArray()),
+		MovingNodes:      valueToStringArray(v.Get("value", "MovingNodes").GetArray()),
+		LeavingNodes:     valueToStringArray(v.Get("value", "LeavingNodes").GetArray()),
+	}, nil
+}
+
 // get makes a GET request to the targetPath and returns the contents of the
 // body as a JSON value ready for items to be plucked. If any part of the
 // request pipeline fails, an err is returned

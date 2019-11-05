@@ -74,11 +74,16 @@ type Client interface {
 	// MemoryStats returns memory information about the Java process
 	MemoryStats() (MemoryStats, error)
 
-	// GarbageCollectorStatus returns information about Garbage Collections
+	// GarbageCollectorStats returns information about Garbage Collections
 	// that occur in the process. Since there are different kinds of GC
 	// processes occurring, the stats are returned as a list with an item for
 	// each kind of GC step
 	GarbageCollectionStats() ([]GCStats, error)
+
+	// StorageStats gives information about the storage layer of Cassandra
+	// which encapsulates things like number of keyspaces and what nodes
+	// are part of the cluster
+	StorageStats() (StorageStats, error)
 }
 
 // Table embeds information about a Keyspace and Table that exists in
@@ -168,4 +173,16 @@ type GCStats struct {
 	Count       Counter // How many collections have occurred
 	LastGC      time.Duration
 	Accumulated time.Duration
+}
+
+// StorageStats embeds information gathered from storage information
+// in Cassandra such as the number of nodes and the state they are in
+type StorageStats struct {
+	KeyspaceCount    Counter
+	TokenCount       Counter
+	LiveNodes        []string
+	UnreachableNodes []string
+	JoiningNodes     []string
+	MovingNodes      []string
+	LeavingNodes     []string
 }

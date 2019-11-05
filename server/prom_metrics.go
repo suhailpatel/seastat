@@ -310,3 +310,24 @@ var (
 		[]string{"name"}, nil,
 	)
 )
+
+// StorageStats
+var (
+	PromStorageKeyspaces = prometheus.NewDesc(
+		"seastat_storage_keyspaces",
+		"Number of keyspaces",
+		[]string{}, nil,
+	)
+
+	PromStorageTokens = prometheus.NewDesc(
+		"seastat_storage_tokens",
+		"Number of tokens",
+		[]string{}, nil,
+	)
+
+	PromStorageNodeStatus = prometheus.NewDesc(
+		"seastat_storage_node_status",
+		"Status of the other nodes from Cassandra's point of view",
+		[]string{"node", "status"}, nil,
+	)
+)
