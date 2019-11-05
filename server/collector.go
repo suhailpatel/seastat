@@ -373,7 +373,7 @@ func addStorageStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 	for _, ns := range nodeStates {
 		for _, node := range ns.nodes {
 			ch <- prometheus.MustNewConstMetric(PromStorageNodeStatus,
-				prometheus.GaugeValue, float64(metrics.StorageStats.KeyspaceCount),
+				prometheus.GaugeValue, 1.0,
 				node, ns.state)
 		}
 	}
