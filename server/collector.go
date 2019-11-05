@@ -77,6 +77,11 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromGCStatsCountTotal,
 		PromGCStatsLastGC,
 		PromGCStatsAccumulatedGC,
+
+		// StorageStats
+		PromStorageKeyspaces,
+		PromStorageTokens,
+		PromStorageNodeStatus,
 	}
 
 	for _, desc := range descs {
@@ -104,6 +109,7 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 	addConnectedClientStats(metrics, ch)
 	addMemoryStats(metrics, ch)
 	addGCStats(metrics, ch)
+	addStorageStats(metrics, ch)
 }
 
 func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
@@ -339,5 +345,36 @@ func addGCStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 			prometheus.GaugeValue, stat.LastGC.Seconds(), stat.Name)
 		ch <- prometheus.MustNewConstMetric(PromGCStatsAccumulatedGC,
 			prometheus.CounterValue, stat.Accumulated.Seconds(), stat.Name)
+	}
+}
+
+func addStorageStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.StorageStats == nil {
+		return
+	}
+
+	// StorageStats
+	ch <- prometheus.MustNewConstMetric(PromStorageKeyspaces,
+		prometheus.GaugeValue, float64(metrics.StorageStats.KeyspaceCount))
+	ch <- prometheus.MustNewConstMetric(PromStorageTokens,
+		prometheus.GaugeValue, float64(metrics.StorageStats.TokenCount))
+
+	nodeStates := []struct {
+		nodes []string
+		state string
+	}{
+		{nodes: metrics.StorageStats.LiveNodes, state: "live"},
+		{nodes: metrics.StorageStats.UnreachableNodes, state: "unreachable"},
+		{nodes: metrics.StorageStats.JoiningNodes, state: "joining"},
+		{nodes: metrics.StorageStats.MovingNodes, state: "moving"},
+		{nodes: metrics.StorageStats.LeavingNodes, state: "leaving"},
+	}
+
+	for _, ns := range nodeStates {
+		for _, node := range ns.nodes {
+			ch <- prometheus.MustNewConstMetric(PromStorageNodeStatus,
+				prometheus.GaugeValue, float64(metrics.StorageStats.KeyspaceCount),
+				node, ns.state)
+		}
 	}
 }

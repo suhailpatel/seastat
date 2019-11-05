@@ -40,6 +40,7 @@ type ScrapedMetrics struct {
 	ConnectedClients   *jolokia.Gauge
 	MemoryStats        *jolokia.MemoryStats
 	GCStats            []jolokia.GCStats
+	StorageStats       *jolokia.StorageStats
 
 	ScrapeDuration time.Duration
 	ScrapeTime     time.Time
@@ -181,6 +182,13 @@ func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 		logrus.Debugf("🦂 Could not get GC stats: %v", err)
 	} else {
 		out.GCStats = gcStats
+	}
+
+	storageStats, err := s.client.StorageStats()
+	if err != nil {
+		logrus.Debugf("🦂 Could not get Storage stats: %v", err)
+	} else {
+		out.StorageStats = &storageStats
 	}
 
 	out.ScrapeDuration = time.Since(scrapeStart)

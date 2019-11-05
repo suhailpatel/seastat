@@ -118,3 +118,17 @@ func extractAttributes(tag string) map[string]string {
 	}
 	return out
 }
+
+// valueToStringArray takes in an array of fastjson value types
+// and converts the ones which are a string value to output an
+// array of strings
+func valueToStringArray(in []*fastjson.Value) []string {
+	out := make([]string, 0, len(in))
+	for _, val := range in {
+		str := string(val.GetStringBytes())
+		if str != "" {
+			out = append(out, str)
+		}
+	}
+	return out
+}
