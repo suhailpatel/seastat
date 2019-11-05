@@ -105,7 +105,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		})
 	}
 
-	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups)
+	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups, [][]string{})
 	if err != nil {
 		return TableStats{}, fmt.Errorf("err reading table: %v", err)
 	}
@@ -273,7 +273,7 @@ func (c *jolokiaClient) CompactionStats() (CompactionStats, error) {
 		})
 	}
 
-	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups)
+	v, err := c.bulkRequest("org.apache.cassandra.metrics", mbeanGroups, [][]string{})
 	if err != nil {
 		return CompactionStats{}, fmt.Errorf("err reading compaction stats: %v", err)
 	}
@@ -405,20 +405,35 @@ func (c *jolokiaClient) GarbageCollectionStats() ([]GCStats, error) {
 // encapsulates things like number of keyspaces and what nodes are part of
 // the cluster
 func (c *jolokiaClient) StorageStats() (StorageStats, error) {
-	v, err := c.read("org.apache.cassandra.db", "type=StorageService")
+	attributes := []string{
+		"Keyspaces",
+		"Tokens",
+		"LiveNodes",
+		"UnreachableNodes",
+		"JoiningNodes",
+		"MovingNodes",
+		"LeavingNodes",
+	}
+
+	v, err := c.bulkRequest("org.apache.cassandra.db", [][]string{{"type=StorageService"}}, [][]string{attributes})
 	if err != nil {
 		return StorageStats{}, fmt.Errorf("err reading storage stats: %v", err)
 	}
 
-	return StorageStats{
-		KeyspaceCount:    Counter(len(v.Get("value", "Keyspaces").GetArray())),
-		TokenCount:       Counter(len(v.Get("value", "Tokens").GetArray())),
-		LiveNodes:        valueToStringArray(v.Get("value", "LiveNodes").GetArray()),
-		UnreachableNodes: valueToStringArray(v.Get("value", "UnreachableNodes").GetArray()),
-		JoiningNodes:     valueToStringArray(v.Get("value", "JoiningNodes").GetArray()),
-		MovingNodes:      valueToStringArray(v.Get("value", "MovingNodes").GetArray()),
-		LeavingNodes:     valueToStringArray(v.Get("value", "LeavingNodes").GetArray()),
-	}, nil
+	stats := StorageStats{}
+	for _, item := range v.GetArray() {
+		if item.Get("status").GetInt64() != http.StatusOK {
+			continue
+		}
+		stats.KeyspaceCount = Counter(len(item.Get("value", "Keyspaces").GetArray()))
+		stats.TokenCount = Counter(len(item.Get("value", "Tokens").GetArray()))
+		stats.LiveNodes = valueToStringArray(item.Get("value", "LiveNodes").GetArray())
+		stats.UnreachableNodes = valueToStringArray(item.Get("value", "UnreachableNodes").GetArray())
+		stats.JoiningNodes = valueToStringArray(item.Get("value", "JoiningNodes").GetArray())
+		stats.MovingNodes = valueToStringArray(item.Get("value", "MovingNodes").GetArray())
+		stats.LeavingNodes = valueToStringArray(item.Get("value", "LeavingNodes").GetArray())
+	}
+	return stats, nil
 }
 
 // get makes a GET request to the targetPath and returns the contents of the
@@ -468,9 +483,10 @@ func (c *jolokiaClient) get(targetPath string) (*fastjson.Value, error) {
 
 // bulkRequest does a Jolokia bulk request. You pass in a list of groups of
 // mbeans (one per request). Responses are provided in order of mbeanGroups
-// queried
-func (c *jolokiaClient) bulkRequest(metricName string, mbeanGroups [][]string) (*fastjson.Value, error) {
-	bodyBytes, err := buildBulkRequestBody(metricName, mbeanGroups)
+// queried. You can also specify a list of list of attributes, if you specify
+// a list of zero attribures, all the attributes are gathered
+func (c *jolokiaClient) bulkRequest(metricName string, mbeanGroups [][]string, attributes [][]string) (*fastjson.Value, error) {
+	bodyBytes, err := buildBulkRequestBody(metricName, mbeanGroups, attributes)
 	if err != nil {
 		return nil, fmt.Errorf("could not build bulkRequest body: %v", err)
 	}
@@ -513,14 +529,21 @@ func (c *jolokiaClient) read(metricName string, kv ...string) (*fastjson.Value, 
 	return c.get(targetPath)
 }
 
-func buildBulkRequestBody(metricName string, mbeanGroups [][]string) ([]byte, error) {
-	queries := make([]map[string]string, 0, len(mbeanGroups))
-	for _, group := range mbeanGroups {
-		mbean := fmt.Sprintf("%s:%s", metricName, strings.Join(group, ","))
-		queries = append(queries, map[string]string{
+func buildBulkRequestBody(metricName string, mbeanGroups [][]string, attributes [][]string) ([]byte, error) {
+	if len(attributes) > 0 && len(mbeanGroups) != len(attributes) {
+		return nil, fmt.Errorf("expected groups and attributes to be the same length")
+	}
+
+	queries := make([]map[string]interface{}, 0, len(mbeanGroups))
+	for idx, group := range mbeanGroups {
+		m := map[string]interface{}{
 			"type":  "read",
-			"mbean": mbean,
-		})
+			"mbean": fmt.Sprintf("%s:%s", metricName, strings.Join(group, ",")),
+		}
+		if len(attributes) > 0 && len(attributes[idx]) > 0 {
+			m["attributes"] = attributes[idx]
+		}
+		queries = append(queries, m)
 	}
 	return json.Marshal(queries)
 }
