@@ -151,15 +151,15 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		case "MeanPartitionSize":
 			stats.MeanPartitionSize = BytesGauge(val.Get("Value").GetInt64())
 		case "BloomFilterFalseRatio":
-			stats.BloomFilterFalseRatio = FloatGauge(val.Get("Value").GetInt64())
+			stats.BloomFilterFalseRatio = FloatGauge(val.Get("Value").GetFloat64())
 		case "TombstoneScannedHistogram":
 			stats.TombstonesScanned = parseHistogram(val)
 		case "LiveCellsScannedHistogram":
 			stats.LiveCellsScanned = parseHistogram(val)
 		case "KeyCacheHitRate":
-			stats.KeyCacheHitRate = FloatGauge(val.Get("Value").GetInt64())
+			stats.KeyCacheHitRate = FloatGauge(val.Get("Value").GetFloat64())
 		case "PercentRepaired":
-			stats.PercentRepaired = FloatGauge(val.Get("Value").GetInt64())
+			stats.PercentRepaired = FloatGauge(val.Get("Value").GetFloat64())
 		case "SpeculativeRetries":
 			stats.SpeculativeRetries = Counter(val.Get("Count").GetInt64())
 		case "SpeculativeFailedRetries":
