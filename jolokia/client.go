@@ -88,7 +88,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		"MeanPartitionSize",
 		"BloomFilterFalseRatio",
 		"TombstoneScannedHistogram",
-		"LiveCellsScannedHistogram",
+		"LiveScannedHistogram",
 		"KeyCacheHitRate",
 		"PercentRepaired",
 		"SpeculativeRetries",
@@ -154,7 +154,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 			stats.BloomFilterFalseRatio = FloatGauge(val.Get("Value").GetFloat64())
 		case "TombstoneScannedHistogram":
 			stats.TombstonesScanned = parseHistogram(val)
-		case "LiveCellsScannedHistogram":
+		case "LiveScannedHistogram":
 			stats.LiveCellsScanned = parseHistogram(val)
 		case "KeyCacheHitRate":
 			stats.KeyCacheHitRate = FloatGauge(val.Get("Value").GetFloat64())
