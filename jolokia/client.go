@@ -77,8 +77,8 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		"ReadLatency",
 		"WriteLatency",
 		"RangeLatency",
-		"CasPropose",
-		"CasCommit",
+		"CasProposeLatency",
+		"CasCommitLatency",
 
 		"EstimatedPartitionCount",
 		"PendingCompactions",
