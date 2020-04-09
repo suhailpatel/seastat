@@ -55,6 +55,18 @@ var (
 		[]string{"keyspace", "table"}, nil,
 	)
 
+	PromTableCASPropose = prometheus.NewDesc(
+		"seastat_table_cas_propose_latency_seconds",
+		"Paxos propose latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
+	PromTableCASCommit = prometheus.NewDesc(
+		"seastat_table_cas_commit_latency_seconds",
+		"Paxos commit latency",
+		[]string{"keyspace", "table"}, nil,
+	)
+
 	PromTableEstimatedPartitionCount = prometheus.NewDesc(
 		"seastat_table_estimated_partitions",
 		"Number of partitions in this table (estimated)",

@@ -38,6 +38,8 @@ These metrics have a labels of `keyspace` and `table` applied to them
 | `seastat_table_read_latency_seconds` | Read Latency for queries which this node is involved in | Summary |
 | `seastat_table_write_latency_seconds` | Write Latency for queries which this node is involved in | Summary |
 | `seastat_table_range_scan_latency_seconds` | Range Scan Latency for queries which this node is involved in | Summary |
+| `seastat_table_cas_propose_latency_seconds` | Compare and Set Propose Latency for queries | Summary |
+| `seastat_table_cas_commit_latency_seconds` | Compare and Set Commit Latency for queries | Summary |
 | `seastat_table_estimated_partitions` | Number of partitions in this table (estimated) | Gauge |
 | `seastat_table_pending_compactions` | Number of pending compactions on this table | Gauge |
 | `seastat_table_live_disk_space_used_bytes` | Disk space used for live cells in bytes | Gauge |
