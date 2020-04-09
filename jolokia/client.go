@@ -134,9 +134,9 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 			stats.WriteLatency = parseLatency(val)
 		case "RangeLatency":
 			stats.RangeLatency = parseLatency(val)
-		case "CasPropose":
+		case "CasProposeLatency":
 			stats.CASProposeLatency = parseLatency(val)
-		case "CasCommit":
+		case "CasCommitLatency":
 			stats.CASCommitLatency = parseLatency(val)
 
 		// Table specific stats
