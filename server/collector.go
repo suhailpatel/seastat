@@ -31,6 +31,8 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromTableRead,
 		PromTableWrite,
 		PromTableRangeScan,
+		PromTableCASPropose,
+		PromTableCASCommit,
 		PromTableEstimatedPartitionCount,
 		PromTablePendingCompactions,
 		PromTableLiveDiskSpaceUsed,
@@ -168,6 +170,24 @@ func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 				95.0: stat.RangeLatency.Percentile95.Seconds(),
 				99.0: stat.RangeLatency.Percentile99.Seconds(),
 				99.9: stat.RangeLatency.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableCASPropose,
+			uint64(stat.CASProposeLatency.Count),
+			float64(stat.CASProposeLatency.Count)*stat.CASProposeLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.CASProposeLatency.Percentile75.Seconds(),
+				95.0: stat.CASProposeLatency.Percentile95.Seconds(),
+				99.0: stat.CASProposeLatency.Percentile99.Seconds(),
+				99.9: stat.CASProposeLatency.Percentile999.Seconds(),
+			}, stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstSummary(PromTableCASCommit,
+			uint64(stat.CASCommitLatency.Count),
+			float64(stat.CASCommitLatency.Count)*stat.CASCommitLatency.Mean.Seconds(),
+			map[float64]float64{
+				75.0: stat.CASCommitLatency.Percentile75.Seconds(),
+				95.0: stat.CASCommitLatency.Percentile95.Seconds(),
+				99.0: stat.CASCommitLatency.Percentile99.Seconds(),
+				99.9: stat.CASCommitLatency.Percentile999.Seconds(),
 			}, stat.Table.KeyspaceName, stat.Table.TableName)
 
 		ch <- prometheus.MustNewConstMetric(PromTableEstimatedPartitionCount,

@@ -98,12 +98,14 @@ type TableStats struct {
 	Table Table
 
 	// Latency stats
-	CoordinatorRead  Latency
-	CoordinatorWrite Latency
-	CoordinatorScan  Latency
-	ReadLatency      Latency
-	WriteLatency     Latency
-	RangeLatency     Latency
+	CoordinatorRead   Latency
+	CoordinatorWrite  Latency
+	CoordinatorScan   Latency
+	ReadLatency       Latency
+	WriteLatency      Latency
+	RangeLatency      Latency
+	CASProposeLatency Latency
+	CASCommitLatency  Latency
 
 	// Table specific stats
 	EstimatedPartitionCount  Gauge
