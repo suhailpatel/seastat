@@ -455,8 +455,7 @@ func (c *jolokiaClient) HintStats() (HintStats, error) {
 		attributes := extractAttributes(string(key))
 		switch attributes["name"] {
 		case "TotalHintsInProgress":
-			// PreparedStatementsEvicted
-			stats.TotalHintsInProgress = Counter(val.Get("Count").GetInt64())
+			stats.TotalHintsInProgress = Gauge(val.Get("Count").GetInt64())
 		case "TotalHints":
 			stats.TotalHints = Counter(val.Get("Count").GetInt64())
 		}

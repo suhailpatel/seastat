@@ -196,6 +196,6 @@ type StorageStats struct {
 // HintStats embeds information gathered from the Storage metric in
 // cassandra such as the number of total hints and hints being handed off
 type HintStats struct {
-	TotalHintsInProgress Counter
+	TotalHintsInProgress Gauge
 	TotalHints           Counter
 }

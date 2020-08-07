@@ -410,7 +410,7 @@ func addHintStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 	}
 
 	ch <- prometheus.MustNewConstMetric(PromTotalHintsInProgress,
-		prometheus.CounterValue, float64(metrics.HintStats.TotalHintsInProgress))
+		prometheus.GaugeValue, float64(metrics.HintStats.TotalHintsInProgress))
 	ch <- prometheus.MustNewConstMetric(PromTotalHints,
 		prometheus.CounterValue, float64(metrics.HintStats.TotalHints))
 }
