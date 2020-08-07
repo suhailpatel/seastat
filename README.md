@@ -140,6 +140,15 @@ These metrics come from Cassandra's storage service which keeps track of the clu
 | `seastat_storage_tokens` | Number of tokens reported by Cassandra  | Gauge |
 | `seastat_storage_node_status` | Status (`live`, `unreachable`, `joining`, `moving`, `leaving`) of each node in the cluster (tagged by node and status) | Gauge |
 
+## Hint Metrics
+
+These metrics come from the [Storage](https://cassandra.apache.org/doc/latest/operating/metrics.html#storage-metrics) metric which keeps track of hints, node load and storage exceptions.
+
+| Name          | Description   | Type |
+| ------------- | ------------- | ---- |
+| `seastat_total_hints` | Number of hint messages written to this node since [re]start. Includes one entry for each host to be hinted per hint. | Counter |
+| `seastat_total_hints_in_progress` | Number of hints attempting to be sent currently from this node. | Gauge |
+
 ## Scrape Metrics
 
 Seastat also exposes some internal metrics of how long the scrape took and the timestamp of the last scrape

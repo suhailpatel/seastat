@@ -343,3 +343,17 @@ var (
 		[]string{"node", "status"}, nil,
 	)
 )
+
+var (
+	PromTotalHintsInProgress = prometheus.NewDesc(
+		"seastat_hints_in_progress",
+		"Number of hints attempting to be handed off since Cassandra started",
+		[]string{}, nil,
+	)
+
+	PromTotalHints = prometheus.NewDesc(
+		"seastat_hints_total",
+		"Number of hint messages written to this node since Cassandra started",
+		[]string{}, nil,
+	)
+)

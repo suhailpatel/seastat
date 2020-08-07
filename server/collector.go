@@ -84,6 +84,10 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromStorageKeyspaces,
 		PromStorageTokens,
 		PromStorageNodeStatus,
+
+		// HintStats
+		PromTotalHintsInProgress,
+		PromTotalHints,
 	}
 
 	for _, desc := range descs {
@@ -112,6 +116,7 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 	addMemoryStats(metrics, ch)
 	addGCStats(metrics, ch)
 	addStorageStats(metrics, ch)
+	addHintStats(metrics, ch)
 }
 
 func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
@@ -397,4 +402,15 @@ func addStorageStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 				node, ns.state)
 		}
 	}
+}
+
+func addHintStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.HintStats == nil {
+		return
+	}
+
+	ch <- prometheus.MustNewConstMetric(PromTotalHintsInProgress,
+		prometheus.GaugeValue, float64(metrics.HintStats.TotalHintsInProgress))
+	ch <- prometheus.MustNewConstMetric(PromTotalHints,
+		prometheus.CounterValue, float64(metrics.HintStats.TotalHints))
 }

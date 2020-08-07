@@ -442,6 +442,27 @@ func (c *jolokiaClient) StorageStats() (StorageStats, error) {
 	return stats, nil
 }
 
+// HintStats gives information on hints being created and handed off in Cassandra
+// Hint metrics are ephemeral and reset when the Cassandra process restarts
+func (c *jolokiaClient) HintStats() (HintStats, error) {
+	v, err := c.read("org.apache.cassandra.metrics", "type=Storage", "name=*")
+	if err != nil {
+		return HintStats{}, fmt.Errorf("err reading CQL stats: %v", err)
+	}
+
+	stats := HintStats{}
+	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
+		attributes := extractAttributes(string(key))
+		switch attributes["name"] {
+		case "TotalHintsInProgress":
+			stats.TotalHintsInProgress = Gauge(val.Get("Count").GetInt64())
+		case "TotalHints":
+			stats.TotalHints = Counter(val.Get("Count").GetInt64())
+		}
+	})
+	return stats, nil
+}
+
 // get makes a GET request to the targetPath and returns the contents of the
 // body as a JSON value ready for items to be plucked. If any part of the
 // request pipeline fails, an err is returned
