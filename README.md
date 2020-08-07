@@ -146,8 +146,8 @@ These metrics come from the [Storage](https://cassandra.apache.org/doc/latest/op
 
 | Name          | Description   | Type |
 | ------------- | ------------- | ---- |
-| `seastat_total_hints` | Number of hint messages written to this node since [re]start. Includes one entry for each host to be hinted per hint. | Counter |
-| `seastat_total_hints_in_progress` | Number of hints attempting to be sent currently from this node. | Gauge |
+| `seastat_hints_total` | Number of hint messages written to this node since [re]start. Includes one entry for each host to be hinted per hint. | Counter |
+| `seastat_hints_in_progress` | Number of hints attempting to be sent currently from this node. | Gauge |
 
 ## Scrape Metrics
 
