@@ -340,11 +340,17 @@ var (
 	PromStorageNodeStatus = prometheus.NewDesc(
 		"seastat_storage_node_status",
 		"Status of the other nodes from Cassandra's point of view",
-		[]string{"node", "status"}, nil,
+		[]string{"node", "status", "state"}, nil,
 	)
 )
 
 var (
+	PromStorageInternalExceptions = prometheus.NewDesc(
+		"seastat_internal_exceptions",
+		"Number of internal exceptions caught",
+		[]string{}, nil,
+	)
+
 	PromTotalHintsInProgress = prometheus.NewDesc(
 		"seastat_hints_in_progress",
 		"Number of hints attempting to be handed off since Cassandra started",

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"sort"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -85,7 +87,7 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromStorageTokens,
 		PromStorageNodeStatus,
 
-		// HintStats
+		// StorageCoreStats
 		PromTotalHintsInProgress,
 		PromTotalHints,
 	}
@@ -116,7 +118,7 @@ func (c *SeastatCollector) Collect(ch chan<- prometheus.Metric) {
 	addMemoryStats(metrics, ch)
 	addGCStats(metrics, ch)
 	addStorageStats(metrics, ch)
-	addHintStats(metrics, ch)
+	addStorageCoreStats(metrics, ch)
 }
 
 func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
@@ -384,33 +386,60 @@ func addStorageStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(PromStorageTokens,
 		prometheus.GaugeValue, float64(metrics.StorageStats.TokenCount))
 
-	nodeStates := []struct {
-		nodes []string
-		state string
-	}{
-		{nodes: metrics.StorageStats.LiveNodes, state: "live"},
-		{nodes: metrics.StorageStats.UnreachableNodes, state: "unreachable"},
-		{nodes: metrics.StorageStats.JoiningNodes, state: "joining"},
-		{nodes: metrics.StorageStats.MovingNodes, state: "moving"},
-		{nodes: metrics.StorageStats.LeavingNodes, state: "leaving"},
+	// All nodes are in either live or unreachable mode
+	nodeMap := map[string]string{}
+	for _, node := range metrics.StorageStats.LiveNodes {
+		nodeMap[node] = "up"
+	}
+	for _, node := range metrics.StorageStats.UnreachableNodes {
+		nodeMap[node] = "down"
 	}
 
-	for _, ns := range nodeStates {
-		for _, node := range ns.nodes {
-			ch <- prometheus.MustNewConstMetric(PromStorageNodeStatus,
-				prometheus.GaugeValue, 1.0,
-				node, ns.state)
+	nodeList := make([]string, 0, len(nodeMap))
+	for node := range nodeMap {
+		nodeList = append(nodeList, node)
+	}
+	sort.Strings(nodeList)
+
+	sliceContains := func(needle string, haystack []string) bool {
+		for _, item := range haystack {
+			if needle == item {
+				return true
+			}
 		}
+		return false
+	}
+
+	for _, node := range nodeList {
+		var status, state string
+		switch {
+		case nodeMap[node] == "down":
+			state, status = "down", "unreachable"
+		case sliceContains(node, metrics.StorageStats.JoiningNodes):
+			state, status = "up", "joining"
+		case sliceContains(node, metrics.StorageStats.MovingNodes):
+			state, status = "up", "moving"
+		case sliceContains(node, metrics.StorageStats.LeavingNodes):
+			state, status = "up", "leaving"
+		default:
+			state, status = "up", "live"
+		}
+
+		ch <- prometheus.MustNewConstMetric(PromStorageNodeStatus,
+			prometheus.GaugeValue, 1.0,
+			node, status, state)
 	}
 }
 
-func addHintStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
-	if metrics.HintStats == nil {
+func addStorageCoreStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
+	if metrics.StorageCoreStats == nil {
 		return
 	}
 
 	ch <- prometheus.MustNewConstMetric(PromTotalHintsInProgress,
-		prometheus.GaugeValue, float64(metrics.HintStats.TotalHintsInProgress))
+		prometheus.GaugeValue, float64(metrics.StorageCoreStats.TotalHintsInProgress))
 	ch <- prometheus.MustNewConstMetric(PromTotalHints,
-		prometheus.CounterValue, float64(metrics.HintStats.TotalHints))
+		prometheus.CounterValue, float64(metrics.StorageCoreStats.TotalHints))
+	ch <- prometheus.MustNewConstMetric(PromStorageInternalExceptions,
+		prometheus.CounterValue, float64(metrics.StorageCoreStats.InternalExceptions))
 }
