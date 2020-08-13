@@ -138,7 +138,7 @@ These metrics come from Cassandra's storage service which keeps track of the clu
 | ------------- | ------------- | ---- |
 | `seastat_storage_keyspaces` | Number of keyspaces reported by Cassandra | Gauge |
 | `seastat_storage_tokens` | Number of tokens reported by Cassandra | Gauge |
-| `seastat_storage_node_status` | State (`up` or `down`) and Status (`live`, `unreachable`, `joining`, `moving`, `leaving`) of each node in the cluster (tagged by node, state and status) | Gauge |
+| `seastat_storage_node_status` | State (`up` or `down`) and Status (`live`, `unreachable`, `joining`, `moving`, `leaving`) of each node in the cluster (tagged by node, state and status). Note that a node may be marked as 'unreachable' even if it's been removed from the cluster but is a seed node | Gauge |
 | `seastat_internal_exceptions` | Number of internal uncaught exceptions | Counter |
 | `seastat_hints_total` | Number of hint messages written to this node since [re]start. Includes one entry for each host to be hinted per hint | Counter |
 | `seastat_hints_in_progress` | Number of hints attempting to be sent currently from this node | Gauge |
