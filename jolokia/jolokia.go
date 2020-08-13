@@ -191,6 +191,7 @@ type StorageStats struct {
 	JoiningNodes     []string
 	MovingNodes      []string
 	LeavingNodes     []string
+	NodeEndpoints	 map[string]string
 }
 
 // StorageCoreStats embeds information gathered from the Storage metric in

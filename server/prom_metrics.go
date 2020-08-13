@@ -342,6 +342,12 @@ var (
 		"Status of the other nodes from Cassandra's point of view",
 		[]string{"node", "status", "state"}, nil,
 	)
+
+	PromStorageNodeEndpointID = prometheus.NewDesc(
+		"seastat_storage_node_host_id",
+		"Host IDs of the nodes in the cluster",
+		[]string{"node", "id"}, nil,
+	)
 )
 
 var (

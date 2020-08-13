@@ -419,6 +419,7 @@ func (c *jolokiaClient) StorageStats() (StorageStats, error) {
 		"JoiningNodes",
 		"MovingNodes",
 		"LeavingNodes",
+		"EndpointToHostId",
 	}
 
 	v, err := c.bulkRequest("org.apache.cassandra.db", [][]string{{"type=StorageService"}}, [][]string{attributes})
@@ -438,6 +439,7 @@ func (c *jolokiaClient) StorageStats() (StorageStats, error) {
 		stats.JoiningNodes = valueToStringArray(item.Get("value", "JoiningNodes").GetArray())
 		stats.MovingNodes = valueToStringArray(item.Get("value", "MovingNodes").GetArray())
 		stats.LeavingNodes = valueToStringArray(item.Get("value", "LeavingNodes").GetArray())
+		stats.NodeEndpoints = valueObjectToStringMap(item.Get("value", "EndpointToHostId").GetObject())
 	}
 	return stats, nil
 }

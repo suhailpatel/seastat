@@ -86,6 +86,7 @@ func (c *SeastatCollector) Describe(ch chan<- *prometheus.Desc) {
 		PromStorageKeyspaces,
 		PromStorageTokens,
 		PromStorageNodeStatus,
+		PromStorageNodeEndpointID,
 
 		// StorageCoreStats
 		PromTotalHintsInProgress,
@@ -428,6 +429,11 @@ func addStorageStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromStorageNodeStatus,
 			prometheus.GaugeValue, 1.0,
 			node, status, state)
+	}
+
+	for ip, id := range metrics.StorageStats.NodeEndpoints {
+		ch <- prometheus.MustNewConstMetric(PromStorageNodeEndpointID,
+			prometheus.GaugeValue, 1.0, ip, id)
 	}
 }
 
