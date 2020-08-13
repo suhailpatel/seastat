@@ -85,9 +85,9 @@ type Client interface {
 	// are part of the cluster
 	StorageStats() (StorageStats, error)
 
-	// HintStats gives information on hints being created and handed off in Cassandra
-	// Hint metrics are ephemeral and reset when the Cassandra process restarts
-	HintStats() (HintStats, error)
+	// StorageCoreStats gives information on the storage core such as
+	// hints and exceptions
+	StorageCoreStats() (StorageCoreStats, error)
 }
 
 // Table embeds information about a Keyspace and Table that exists in
@@ -191,11 +191,15 @@ type StorageStats struct {
 	JoiningNodes     []string
 	MovingNodes      []string
 	LeavingNodes     []string
+	NodeEndpoints	 map[string]string
 }
 
-// HintStats embeds information gathered from the Storage metric in
-// cassandra such as the number of total hints and hints being handed off
-type HintStats struct {
+// StorageCoreStats embeds information gathered from the Storage metric in
+// Cassandra such as the number of total hints and hints being handed off
+// and internal exceptions
+type StorageCoreStats struct {
+	InternalExceptions 	 Counter
+	LoadBytes 			 Gauge
 	TotalHintsInProgress Gauge
 	TotalHints           Counter
 }

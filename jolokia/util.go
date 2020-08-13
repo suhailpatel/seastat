@@ -132,3 +132,16 @@ func valueToStringArray(in []*fastjson.Value) []string {
 	}
 	return out
 }
+
+// valueObjectToStringMap takes in a fastjson objects and extracts
+// the keys and values as a map of string to string
+func valueObjectToStringMap(in *fastjson.Object) map[string]string {
+	out := make(map[string]string, 8)
+	in.Visit(func(key []byte, val *fastjson.Value) {
+		str := string(val.GetStringBytes())
+		if len(key) > 0 && str != "" {
+			out[string(key)] = string(val.GetStringBytes())
+		}
+	})
+	return out
+}

@@ -419,6 +419,7 @@ func (c *jolokiaClient) StorageStats() (StorageStats, error) {
 		"JoiningNodes",
 		"MovingNodes",
 		"LeavingNodes",
+		"EndpointToHostId",
 	}
 
 	v, err := c.bulkRequest("org.apache.cassandra.db", [][]string{{"type=StorageService"}}, [][]string{attributes})
@@ -438,19 +439,19 @@ func (c *jolokiaClient) StorageStats() (StorageStats, error) {
 		stats.JoiningNodes = valueToStringArray(item.Get("value", "JoiningNodes").GetArray())
 		stats.MovingNodes = valueToStringArray(item.Get("value", "MovingNodes").GetArray())
 		stats.LeavingNodes = valueToStringArray(item.Get("value", "LeavingNodes").GetArray())
+		stats.NodeEndpoints = valueObjectToStringMap(item.Get("value", "EndpointToHostId").GetObject())
 	}
 	return stats, nil
 }
 
-// HintStats gives information on hints being created and handed off in Cassandra
-// Hint metrics are ephemeral and reset when the Cassandra process restarts
-func (c *jolokiaClient) HintStats() (HintStats, error) {
+// StorageCoreStats gives information on hints and internal exceptions
+func (c *jolokiaClient) StorageCoreStats() (StorageCoreStats, error) {
 	v, err := c.read("org.apache.cassandra.metrics", "type=Storage", "name=*")
 	if err != nil {
-		return HintStats{}, fmt.Errorf("err reading CQL stats: %v", err)
+		return StorageCoreStats{}, fmt.Errorf("err reading storage stats: %v", err)
 	}
 
-	stats := HintStats{}
+	stats := StorageCoreStats{}
 	v.Get("value").GetObject().Visit(func(key []byte, val *fastjson.Value) {
 		attributes := extractAttributes(string(key))
 		switch attributes["name"] {
@@ -458,6 +459,8 @@ func (c *jolokiaClient) HintStats() (HintStats, error) {
 			stats.TotalHintsInProgress = Gauge(val.Get("Count").GetInt64())
 		case "TotalHints":
 			stats.TotalHints = Counter(val.Get("Count").GetInt64())
+		case "Exceptions":
+			stats.InternalExceptions = Counter(val.Get("Count").GetInt64())
 		}
 	})
 	return stats, nil
