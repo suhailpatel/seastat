@@ -156,6 +156,12 @@ var (
 		"Total amount of speculative failed retries",
 		[]string{"keyspace", "table"}, nil,
 	)
+
+	PromTableCompressionRatio = prometheus.NewDesc(
+		"seastat_table_compression_ratio",
+		"Compression ratio for the table (a ratio of compressed size over uncompressed size)",
+		[]string{"keyspace", "table"}, nil,
+	)
 )
 
 // CQLStats

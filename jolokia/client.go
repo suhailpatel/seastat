@@ -95,6 +95,7 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 		"PercentRepaired",
 		"SpeculativeRetries",
 		"SpeculativeFailedRetries",
+		"CompressionRatio",
 	}
 
 	mbeanGroups := make([][]string, 0, len(metricItems))
@@ -170,6 +171,8 @@ func (c *jolokiaClient) TableStats(table Table) (TableStats, error) {
 			stats.SpeculativeRetries = Counter(val.Get("Count").GetInt64())
 		case "SpeculativeFailedRetries":
 			stats.SpeculativeFailedRetries = Counter(val.Get("Count").GetInt64())
+		case "CompressionRatio":
+			stats.CompressionRatio = FloatGauge(val.Get("Value").GetFloat64())
 		}
 	}
 	return stats, nil

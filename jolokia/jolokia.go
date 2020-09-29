@@ -127,6 +127,7 @@ type TableStats struct {
 	PercentRepaired          FloatGauge
 	SpeculativeRetries       Counter
 	SpeculativeFailedRetries Counter
+	CompressionRatio         FloatGauge
 }
 
 // CQLStats embeds stats about Prepared and Regular CQL statements
