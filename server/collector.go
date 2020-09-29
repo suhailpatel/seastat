@@ -261,6 +261,9 @@ func addTableStats(metrics ScrapedMetrics, ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(PromTableSpeculativeFailedRetries,
 			prometheus.GaugeValue, float64(stat.SpeculativeFailedRetries),
 			stat.Table.KeyspaceName, stat.Table.TableName)
+		ch <- prometheus.MustNewConstMetric(PromTableCompressionRatio,
+			prometheus.GaugeValue, float64(stat.CompressionRatio),
+			stat.Table.KeyspaceName, stat.Table.TableName)
 	}
 }
 
