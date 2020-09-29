@@ -54,7 +54,8 @@ These metrics have a labels of `keyspace` and `table` applied to them
 | `seastat_table_key_cache_hit_percent` | Percent of key cache hits | Gauge
 | `seastat_table_repaired_percent` | Percent of table repaired | Gauge
 | `seastat_table_speculative_retries_total` | Total amount of speculative retries | Counter
-| `seastat_table_speculative_failed_retries_total` | Total amount of speculative failed retries | Counter
+| `seastat_table_speculative_failed_retries_total` | Total amount of speculative failed retries | Counter |
+| `seastat_table_compression_ratio` | Compression ratio for the table (a ratio of compressed size over uncompressed size) | Gauge |
 
 ## CQL Metrics
 
