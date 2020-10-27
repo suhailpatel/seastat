@@ -180,6 +180,25 @@ $ # To run on port 8080 with debug logging
 $ ./seastat server -p 8080 -v debug
 ```
 
+If you find Jolokia getting stuck and timing out, consider tuning down the concurrency parameter (which controls
+the maximum number of Jolokia requests in flight at any one time).
+
+```shell
+$ ./seastat server -p 8080 --concurrency 2
+```
+
+I've found 10 to be a good middleground for a Cassandra instance running on a beefy machine (8+ cores and 32GB
+of heap space) but your experience may vary.
+
+We also expose a flag to configure the default Jolokia timeout per request
+
+```shell
+$ ./seastat server -p 8080 --timeout 2s
+```
+
+It is recommended to not set the timeout too high. A high timeout indicates Jolokia struggling to serve all the
+metrics needed. If you are unsure, open an issue!
+
 # Things to work on
 
 - Seastat does not support Jolokia auth

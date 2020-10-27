@@ -13,11 +13,12 @@ import (
 // tableScrapeInterval defines how often we will ask for a full table list
 const tableScrapeInterval = 5 * time.Minute
 
-// Scraper handles coordination of scraping activties and keeps track of
+// Scraper handles coordination of scraping activities and keeps track of
 // the active metrics
 type Scraper struct {
-	client  jolokia.Client
-	stopped chan struct{}
+	client         jolokia.Client
+	maxConcurrency int
+	stopped        chan struct{}
 
 	// Everything below should use the mutex
 	mu sync.RWMutex
@@ -59,10 +60,11 @@ func (t TableStatsSorter) Less(i, j int) bool {
 }
 
 // NewScraper returns a new instance of a Scraper
-func NewScraper(client jolokia.Client) *Scraper {
+func NewScraper(client jolokia.Client, maxConcurrency int) *Scraper {
 	return &Scraper{
-		client:  client,
-		stopped: make(chan struct{}),
+		client:         client,
+		maxConcurrency: maxConcurrency,
+		stopped:        make(chan struct{}),
 	}
 }
 
@@ -206,9 +208,10 @@ func (s *Scraper) scrapeAllMetrics() ScrapedMetrics {
 
 func (s *Scraper) scrapeTableMetrics() []jolokia.TableStats {
 	// The goal of this function is to scrape the table metrics in parallel.
-	// A few numbers were tried and 10 seemed to be a sweet spot with Jolokia.
-	// Ramping this too high may lead to stuck conns
-	const workers = 10
+	workers := s.maxConcurrency
+	if workers < 1 {
+		workers = 1
+	}
 
 	type result struct {
 		table      jolokia.Table

@@ -20,16 +20,14 @@ type jolokiaClient struct {
 	httpClient *http.Client
 }
 
-var defaultHTTPClient = &http.Client{
-	Timeout: 3 * time.Second,
-}
-
-// Init initalizes and returns a Client ready for calls. The endpoint should
+// Init initializes and returns a Client ready for calls. The endpoint should
 // consist of <protocol>://<host>:<port>. (example: http://localhost:8778)
-func Init(endpoint string) Client {
+func Init(endpoint string, timeout time.Duration) Client {
 	c := &jolokiaClient{
-		endpoint:   endpoint,
-		httpClient: defaultHTTPClient,
+		endpoint: endpoint,
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
 	}
 	return c
 }

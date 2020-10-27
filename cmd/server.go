@@ -25,12 +25,16 @@ func init() {
 	serverCmd.PersistentFlags().String("endpoint", "http://localhost:8778", "endpoint where Jolokia is running")
 	serverCmd.PersistentFlags().Duration("interval", 30*time.Second, "how often we attempt to extract metrics (minimum 10s)")
 	serverCmd.PersistentFlags().Int("port", 8080, "port to run the Seastat server on (for Prometheus to scrape)")
+	serverCmd.PersistentFlags().Duration("timeout", 3*time.Second, "how long before we timeout a Jolokia request")
+	serverCmd.PersistentFlags().Int("concurrency", 10, "maximum number of concurrent requests to Jolokia")
 }
 
 func run(cmd *cobra.Command) {
 	endpoint, _ := cmd.Flags().GetString("endpoint")
 	interval, _ := cmd.Flags().GetDuration("interval")
 	port, _ := cmd.Flags().GetInt("port")
+	timeout, _ := cmd.Flags().GetDuration("timeout")
+	concurrency, _ := cmd.Flags().GetInt("concurrency")
 
 	if endpoint == "" {
 		logrus.Fatalf("'endpoint' can not be empty")
@@ -44,7 +48,7 @@ func run(cmd *cobra.Command) {
 		port = 8000
 	}
 
-	client := jolokia.Init(endpoint)
+	client := jolokia.Init(endpoint, timeout)
 
 	// Run a quick sanity check of the provided endpoint
 	version, err := client.Version()
@@ -52,5 +56,5 @@ func run(cmd *cobra.Command) {
 		logrus.Fatalf("could not connect to Jolokia: %v", err)
 	}
 	logrus.Infof("☕ Communicating with Jolokia %s (%s)", version, endpoint)
-	server.Run(client, interval, port)
+	server.Run(client, interval, port, concurrency)
 }
