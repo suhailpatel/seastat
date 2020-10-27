@@ -26,7 +26,7 @@ type responseWriter struct {
 
 // Run takes in the Jolokia client and some options and does everything needed
 // to start scraping and serving metrics
-func Run(client jolokia.Client, interval time.Duration, port int) {
+func Run(client jolokia.Client, interval time.Duration, port, maxConcurrency int) {
 	// Parent context to track all our child goroutines
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -36,7 +36,7 @@ func Run(client jolokia.Client, interval time.Duration, port int) {
 	t := tomb.Tomb{}
 
 	// Start up our scraper
-	scraper := NewScraper(client)
+	scraper := NewScraper(client, maxConcurrency)
 	t.Go(func() error {
 		// Set up our scraper for shutdown when our context terminates
 		t.Go(func() error {
