@@ -28,11 +28,12 @@ func init() {
 	serverCmd.PersistentFlags().Int("port", 8080, "port to run the Seastat server on (for Prometheus to scrape)")
 	serverCmd.PersistentFlags().Duration("timeout", 3*time.Second, "how long before we timeout a Jolokia request")
 	serverCmd.PersistentFlags().Int("concurrency", 10, "maximum number of concurrent requests to Jolokia")
-	viper.BindPFlag("endpoint", serverCmd.Flags().Lookup("endpoint"))
-	viper.BindPFlag("interval", serverCmd.Flags().Lookup("interval"))
-	viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
-	viper.BindPFlag("timeout", serverCmd.Flags().Lookup("timeout"))
-	viper.BindPFlag("concurrency", serverCmd.Flags().Lookup("concurrency"))
+
+	viper.BindPFlag("endpoint", serverCmd.PersistentFlags().Lookup("endpoint"))
+	viper.BindPFlag("interval", serverCmd.PersistentFlags().Lookup("interval"))
+	viper.BindPFlag("port", serverCmd.PersistentFlags().Lookup("port"))
+	viper.BindPFlag("timeout", serverCmd.PersistentFlags().Lookup("timeout"))
+	viper.BindPFlag("concurrency", serverCmd.PersistentFlags().Lookup("concurrency"))
 }
 
 func run(cmd *cobra.Command) {
