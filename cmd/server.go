@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/suhailpatel/seastat/jolokia"
 	"github.com/suhailpatel/seastat/server"
@@ -27,14 +28,19 @@ func init() {
 	serverCmd.PersistentFlags().Int("port", 8080, "port to run the Seastat server on (for Prometheus to scrape)")
 	serverCmd.PersistentFlags().Duration("timeout", 3*time.Second, "how long before we timeout a Jolokia request")
 	serverCmd.PersistentFlags().Int("concurrency", 10, "maximum number of concurrent requests to Jolokia")
+	viper.BindPFlag("endpoint", serverCmd.Flags().Lookup("endpoint"))
+	viper.BindPFlag("interval", serverCmd.Flags().Lookup("interval"))
+	viper.BindPFlag("port", serverCmd.Flags().Lookup("port"))
+	viper.BindPFlag("timeout", serverCmd.Flags().Lookup("timeout"))
+	viper.BindPFlag("concurrency", serverCmd.Flags().Lookup("concurrency"))
 }
 
 func run(cmd *cobra.Command) {
-	endpoint, _ := cmd.Flags().GetString("endpoint")
-	interval, _ := cmd.Flags().GetDuration("interval")
-	port, _ := cmd.Flags().GetInt("port")
-	timeout, _ := cmd.Flags().GetDuration("timeout")
-	concurrency, _ := cmd.Flags().GetInt("concurrency")
+	endpoint := viper.GetString("endpoint")
+	interval := viper.GetDuration("interval")
+	port := viper.GetInt("port")
+	timeout := viper.GetDuration("timeout")
+	concurrency := viper.GetInt("concurrency")
 
 	if endpoint == "" {
 		logrus.Fatalf("'endpoint' can not be empty")
